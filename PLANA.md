@@ -1,7 +1,7 @@
 # PLANA.md — Syntrix: Agentic Social Lead Finder + Outreach Workbench
 
 > **Codename:** Syntrix
-> **Repo name:** `syntrix`
+> **Repo name:** `Syntrix`
 > **Tagline:** Open-source, compliance-first social lead intelligence — find intent signals, qualify leads, draft outreach, learn from outcomes.
 
 ---
@@ -180,7 +180,7 @@
 ### File Tree
 
 ```
-syntrix/
+signalops/
 ├── pyproject.toml                  # Project metadata, dependencies
 ├── README.md                       # Setup guide, usage examples
 ├── LICENSE                         # MIT
@@ -193,7 +193,7 @@ syntrix/
 │   ├── spectra.yaml
 │   └── salesense.yaml
 ├── src/
-│   └── syntrix/
+│   └── signalops/
 │       ├── __init__.py
 │       ├── cli/
 │       │   ├── __init__.py
@@ -280,7 +280,7 @@ syntrix/
 #### Connector Interface
 
 ```python
-# src/syntrix/connectors/base.py
+# src/signalops/connectors/base.py
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -325,7 +325,7 @@ class Connector(ABC):
 #### Judge Interface (Model Boundary)
 
 ```python
-# src/syntrix/models/judge_model.py
+# src/signalops/models/judge_model.py
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -351,7 +351,7 @@ class RelevanceJudge(ABC):
 #### Draft Generator Interface
 
 ```python
-# src/syntrix/models/draft_model.py
+# src/signalops/models/draft_model.py
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -404,7 +404,7 @@ audit_logs (append-only, references any entity)
 ### Table Definitions (SQLAlchemy)
 
 ```python
-# src/syntrix/storage/database.py
+# src/signalops/storage/database.py
 from sqlalchemy import (Column, String, Integer, Float, Boolean, DateTime,
                         Text, JSON, ForeignKey, UniqueConstraint, Index,
                         Enum as SAEnum, func)
@@ -606,7 +606,7 @@ class AuditLog(Base):
 ### Schema (`project.yaml`)
 
 ```python
-# src/syntrix/config/schema.py
+# src/signalops/config/schema.py
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -871,7 +871,7 @@ llm:
 ### Config Loading
 
 ```python
-# src/syntrix/config/loader.py
+# src/signalops/config/loader.py
 import yaml
 import os
 import hashlib
@@ -930,8 +930,8 @@ Every time a human interacts with the pipeline, we capture training signal:
 #### JSONL Export Command
 
 ```bash
-syntrix export training-data --project spectra --type judgments --format openai --output judgments.jsonl
-syntrix export training-data --project spectra --type drafts --format dpo --output preferences.jsonl
+signalops export training-data --project spectra --type judgments --format openai --output judgments.jsonl
+signalops export training-data --project spectra --type drafts --format dpo --output preferences.jsonl
 ```
 
 #### Judgment Export Format (Classification Fine-Tuning)
@@ -949,7 +949,7 @@ syntrix export training-data --project spectra --type drafts --format dpo --outp
 #### Exporter Implementation
 
 ```python
-# src/syntrix/training/exporter.py
+# src/signalops/training/exporter.py
 import json
 from datetime import datetime
 from pathlib import Path
@@ -1021,13 +1021,13 @@ class TrainingDataExporter:
 #### Eval Command
 
 ```bash
-syntrix eval judge --project spectra --test-set tests/fixtures/eval_set.jsonl
+signalops eval judge --project spectra --test-set tests/fixtures/eval_set.jsonl
 ```
 
 #### Eval Runner
 
 ```python
-# src/syntrix/training/evaluator.py
+# src/signalops/training/evaluator.py
 from sklearn.metrics import classification_report, matthews_corrcoef
 import json
 
@@ -1118,7 +1118,7 @@ class ABTestJudge(RelevanceJudge):
 **Collection flow:**
 1. For each approved draft, store `(prompt, chosen=text_final, rejected=text_generated)` as a DPO pair
 2. Also collect KTO data: `approved` → label=true, `rejected` → label=false
-3. Export via `syntrix export training-data --type drafts --format dpo`
+3. Export via `signalops export training-data --type drafts --format dpo`
 
 **Training options (in order of complexity):**
 1. **KTO** (simplest): Unpaired good/bad signals. Use when < 500 preference pairs.
@@ -1148,11 +1148,11 @@ class ABTestJudge(RelevanceJudge):
 
 **Files to create:**
 - `pyproject.toml` — dependencies: click, sqlalchemy, alembic, pydantic, httpx, pyyaml, rich
-- `src/syntrix/__init__.py`
-- `src/syntrix/config/schema.py` — Pydantic models
-- `src/syntrix/config/loader.py` — YAML loader with env var resolution
-- `src/syntrix/config/defaults.py` — Default values
-- `src/syntrix/storage/database.py` — SQLAlchemy models
+- `src/signalops/__init__.py`
+- `src/signalops/config/schema.py` — Pydantic models
+- `src/signalops/config/loader.py` — YAML loader with env var resolution
+- `src/signalops/config/defaults.py` — Default values
+- `src/signalops/storage/database.py` — SQLAlchemy models
 - `projects/spectra.yaml` — First example config
 - `.env.example`
 
@@ -1168,11 +1168,11 @@ class ABTestJudge(RelevanceJudge):
 #### Day 2: Connectors + Collection
 
 **Files to create:**
-- `src/syntrix/connectors/base.py` — Connector ABC + RawPost dataclass
-- `src/syntrix/connectors/x_api.py` — X API v2 search + reply
-- `src/syntrix/connectors/x_auth.py` — OAuth 2.0 PKCE flow
-- `src/syntrix/connectors/rate_limiter.py` — Sliding window + jitter
-- `src/syntrix/pipeline/collector.py` — Collect stage
+- `src/signalops/connectors/base.py` — Connector ABC + RawPost dataclass
+- `src/signalops/connectors/x_api.py` — X API v2 search + reply
+- `src/signalops/connectors/x_auth.py` — OAuth 2.0 PKCE flow
+- `src/signalops/connectors/rate_limiter.py` — Sliding window + jitter
+- `src/signalops/pipeline/collector.py` — Collect stage
 
 **Tests:**
 - `tests/test_collector.py` — Mock X API responses, test deduplication, test rate limiting
@@ -1187,14 +1187,14 @@ class ABTestJudge(RelevanceJudge):
 #### Day 3: Normalize + Judge
 
 **Files to create:**
-- `src/syntrix/pipeline/normalizer.py` — Clean text, extract entities, language detection
-- `src/syntrix/models/llm_gateway.py` — LLM abstraction
-- `src/syntrix/models/providers/base.py` — LLMProvider ABC
-- `src/syntrix/models/providers/anthropic.py` — Claude provider
-- `src/syntrix/models/providers/openai.py` — OpenAI provider
-- `src/syntrix/models/judge_model.py` — RelevanceJudge interface + LLMPromptJudge
-- `src/syntrix/models/fallback.py` — Rule-based keyword fallback
-- `src/syntrix/pipeline/judge.py` — Judge stage
+- `src/signalops/pipeline/normalizer.py` — Clean text, extract entities, language detection
+- `src/signalops/models/llm_gateway.py` — LLM abstraction
+- `src/signalops/models/providers/base.py` — LLMProvider ABC
+- `src/signalops/models/providers/anthropic.py` — Claude provider
+- `src/signalops/models/providers/openai.py` — OpenAI provider
+- `src/signalops/models/judge_model.py` — RelevanceJudge interface + LLMPromptJudge
+- `src/signalops/models/fallback.py` — Rule-based keyword fallback
+- `src/signalops/pipeline/judge.py` — Judge stage
 
 **Tests:**
 - `tests/test_normalizer.py` — URL stripping, whitespace normalization, entity extraction
@@ -1208,9 +1208,9 @@ class ABTestJudge(RelevanceJudge):
 #### Day 4: Score + Draft
 
 **Files to create:**
-- `src/syntrix/pipeline/scorer.py` — Weighted scoring function
-- `src/syntrix/models/draft_model.py` — DraftGenerator interface + LLM implementation
-- `src/syntrix/pipeline/drafter.py` — Draft stage
+- `src/signalops/pipeline/scorer.py` — Weighted scoring function
+- `src/signalops/models/draft_model.py` — DraftGenerator interface + LLM implementation
+- `src/signalops/pipeline/drafter.py` — Draft stage
 
 **Tests:**
 - `tests/test_scorer.py` — Scoring math, weight validation, edge cases (0 followers, etc.)
@@ -1224,37 +1224,37 @@ class ABTestJudge(RelevanceJudge):
 #### Day 5: CLI + Approval + Send
 
 **Files to create:**
-- `src/syntrix/cli/main.py` — Click app with group commands
-- `src/syntrix/cli/project.py` — `project set/list/init`
-- `src/syntrix/cli/collect.py` — `run collect`
-- `src/syntrix/cli/judge.py` — `run judge`
-- `src/syntrix/cli/score.py` — `run score`
-- `src/syntrix/cli/draft.py` — `draft replies`
-- `src/syntrix/cli/approve.py` — `approve` (interactive)
-- `src/syntrix/cli/send.py` — `send` (with --dry-run)
-- `src/syntrix/pipeline/sender.py` — Send stage with approval gate
-- `src/syntrix/storage/audit.py` — Audit logger
+- `src/signalops/cli/main.py` — Click app with group commands
+- `src/signalops/cli/project.py` — `project set/list/init`
+- `src/signalops/cli/collect.py` — `run collect`
+- `src/signalops/cli/judge.py` — `run judge`
+- `src/signalops/cli/score.py` — `run score`
+- `src/signalops/cli/draft.py` — `draft replies`
+- `src/signalops/cli/approve.py` — `approve` (interactive)
+- `src/signalops/cli/send.py` — `send` (with --dry-run)
+- `src/signalops/pipeline/sender.py` — Send stage with approval gate
+- `src/signalops/storage/audit.py` — Audit logger
 
 **Tests:**
 - `tests/test_cli.py` — Click CliRunner tests for each command
 
 **Acceptance criteria:**
-- Full pipeline runnable via CLI: `syntrix run collect && syntrix run judge && syntrix run score && syntrix draft replies && syntrix approve && syntrix send`
+- Full pipeline runnable via CLI: `signalops run collect && signalops run judge && signalops run score && signalops draft replies && signalops approve && signalops send`
 - `--dry-run` on send does not actually post
 - Audit log captures every action
 
 #### Day 6: Orchestrator + End-to-End
 
 **Files to create:**
-- `src/syntrix/pipeline/orchestrator.py` — Full pipeline runner (`syntrix run all`)
-- `src/syntrix/cli/stats.py` — Basic stats display
+- `src/signalops/pipeline/orchestrator.py` — Full pipeline runner (`signalops run all`)
+- `src/signalops/cli/stats.py` — Basic stats display
 
 **Tests:**
 - End-to-end test with mocked X API: collect → normalize → judge → score → draft → approve → send
 - Stats command displays correct counts
 
 **Acceptance criteria:**
-- `syntrix run all --project spectra --dry-run` completes full pipeline
+- `signalops run all --project spectra --dry-run` completes full pipeline
 - Stats show collected/judged/scored/drafted/approved/sent counts
 
 #### Day 7: Polish + Docs + CI
@@ -1292,7 +1292,7 @@ class ABTestJudge(RelevanceJudge):
 ### Command Tree
 
 ```
-syntrix
+signalops
 ├── project
 │   ├── set <name>           # Set active project
 │   ├── list                 # List all projects
@@ -1334,12 +1334,12 @@ syntrix
 #### Setup
 
 ```bash
-$ syntrix auth login
+$ signalops auth login
 Opening browser for X OAuth authorization...
 ✓ Authenticated as @yourhandle (Basic tier)
-  Access token stored in ~/.syntrix/credentials.json
+  Access token stored in ~/.signalops/credentials.json
 
-$ syntrix project set spectra
+$ signalops project set spectra
 ✓ Active project: Spectra AI (spectra)
   4 queries configured
   ICP: min 200 followers, en only
@@ -1348,7 +1348,7 @@ $ syntrix project set spectra
 #### Collect + Judge + Score
 
 ```bash
-$ syntrix run all --project spectra
+$ signalops run all --project spectra
 ⠋ Collecting tweets...
   Query 1/4: "Code review pain points" → 47 new tweets
   Query 2/4: "Bugs slipping through PRs" → 23 new tweets
@@ -1378,11 +1378,11 @@ $ syntrix run all --project spectra
 #### Draft + Approve + Send
 
 ```bash
-$ syntrix run draft --top 5
+$ signalops run draft --top 5
 ⠋ Generating drafts...
 ✓ Generated 5 drafts
 
-$ syntrix queue list
+$ signalops queue list
   ┌────┬────────┬────────────────┬──────────────────────────────────────────────┬────────┐
   │ ID │ Score  │ Reply To       │ Draft                                        │ Status │
   ├────┼────────┼────────────────┼──────────────────────────────────────────────┼────────┤
@@ -1393,26 +1393,26 @@ $ syntrix queue list
   │ 5  │ 74     │ @senior_dev_j  │ "Know that pain well. Happy to show how..." │ pending│
   └────┴────────┴────────────────┴──────────────────────────────────────────────┴────────┘
 
-$ syntrix queue approve 1
+$ signalops queue approve 1
 ✓ Draft #1 approved
 
-$ syntrix queue edit 2
+$ signalops queue edit 2
   Current: "We built Spectra for exactly this. AI catches what humans miss in PRs."
   New text: "Great question — we've been working on this at Spectra. It auto-catches
   the stuff that's easy to miss in PRs. Happy to demo if useful."
 ✓ Draft #2 edited and approved
 
-$ syntrix queue reject 5
+$ signalops queue reject 5
   Reason (optional): Too generic, not enough context
 ✓ Draft #5 rejected
 
-$ syntrix queue send --dry-run
+$ signalops queue send --dry-run
   Would send 2 replies:
     #1 → @techleadSara (score: 92)
     #2 → @devops_mike (score: 87)
   Use --confirm to send for real.
 
-$ syntrix queue send --confirm
+$ signalops queue send --confirm
 ⠋ Sending replies...
   ✓ Sent reply to @techleadSara (tweet ID: 1892847362541)
   ✓ Sent reply to @devops_mike (tweet ID: 1892847399102)
@@ -1422,7 +1422,7 @@ $ syntrix queue send --confirm
 #### Correct Judgments (Training Data)
 
 ```bash
-$ syntrix correct 42 --label relevant --reason "Actually discussing tool evaluation"
+$ signalops correct 42 --label relevant --reason "Actually discussing tool evaluation"
 ✓ Judgment #42 corrected: irrelevant → relevant
   This correction will be included in the next training data export.
 ```
@@ -1430,10 +1430,10 @@ $ syntrix correct 42 --label relevant --reason "Actually discussing tool evaluat
 #### Export + Eval
 
 ```bash
-$ syntrix export training-data --type judgments --format openai
+$ signalops export training-data --type judgments --format openai
 ✓ Exported 247 judgment records to judgments_spectra_20260217.jsonl
 
-$ syntrix eval judge --test-set tests/fixtures/eval_set.jsonl
+$ signalops eval judge --test-set tests/fixtures/eval_set.jsonl
   Running evaluation on 100 test examples...
 
   Classification Report:
@@ -1447,7 +1447,7 @@ $ syntrix eval judge --test-set tests/fixtures/eval_set.jsonl
   └─────────────┴───────────┴────────┴──────┴─────────┘
   MCC: 0.67
 
-$ syntrix stats
+$ signalops stats
   ┌──────────────────────────────────────┐
   │ Spectra AI — Pipeline Stats          │
   ├──────────────────────────────────────┤
@@ -1630,7 +1630,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: mypy src/syntrix --strict
+      - run: mypy src/signalops --strict
 
   test:
     runs-on: ubuntu-latest
@@ -1640,7 +1640,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ -v --tb=short --cov=syntrix --cov-report=xml
+      - run: pytest tests/ -v --tb=short --cov=signalops --cov-report=xml
       - uses: codecov/codecov-action@v4
         with:
           file: coverage.xml
@@ -1739,7 +1739,7 @@ class ThrottleConfig:
 ```toml
 # pyproject.toml [project.dependencies]
 [project]
-name = "syntrix"
+name = "signalops"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -1767,7 +1767,7 @@ dev = [
 ]
 
 [project.scripts]
-syntrix = "syntrix.cli.main:cli"
+signalops = "signalops.cli.main:cli"
 ```
 
 ## Appendix B: Environment Variables
@@ -1788,7 +1788,7 @@ ANTHROPIC_API_KEY=               # Claude API key
 OPENAI_API_KEY=                  # OpenAI API key (optional)
 
 # ── Storage ──
-DATABASE_URL=sqlite:///syntrix.db   # SQLite default, PostgreSQL for production
+DATABASE_URL=sqlite:///signalops.db   # SQLite default, PostgreSQL for production
 REDIS_URL=redis://localhost:6379/0     # Optional, for caching
 
 # ── Notifications ──
