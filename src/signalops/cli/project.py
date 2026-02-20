@@ -7,7 +7,7 @@ from typing import Any
 import click
 from rich.table import Table
 
-from signalops.config.defaults import DEFAULT_CREDENTIALS_DIR, DEFAULT_PROJECTS_DIR
+from signalops.config.defaults import DEFAULT_PROJECTS_DIR
 from signalops.config.schema import ProjectConfig
 
 
@@ -21,7 +21,7 @@ def project_group() -> None:
 @click.pass_context
 def project_set(ctx: click.Context, name: str) -> None:
     """Set the active project."""
-    from signalops.config.loader import load_project
+    from signalops.config.loader import load_project, set_active_project
 
     config_path = DEFAULT_PROJECTS_DIR / f"{name}.yaml"
     if not config_path.exists():
@@ -31,9 +31,7 @@ def project_set(ctx: click.Context, name: str) -> None:
     config = load_project(config_path)
 
     # Store active project
-    DEFAULT_CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
-    active_file = DEFAULT_CREDENTIALS_DIR / "active_project"
-    active_file.write_text(name)
+    set_active_project(name)
 
     console = ctx.obj["console"]
     console.print(f"[green]Active project: {name} ({len(config.queries)} queries configured)")
@@ -43,7 +41,7 @@ def project_set(ctx: click.Context, name: str) -> None:
 @click.pass_context
 def project_list(ctx: click.Context) -> None:
     """List all available projects."""
-    from signalops.config.loader import load_project
+    from signalops.config.loader import get_active_project, load_project
 
     console = ctx.obj["console"]
 
@@ -57,11 +55,7 @@ def project_list(ctx: click.Context) -> None:
         console.print("[yellow]No project configs found in projects/")
         return
 
-    # Determine active project
-    active_name = None
-    active_file = DEFAULT_CREDENTIALS_DIR / "active_project"
-    if active_file.exists():
-        active_name = active_file.read_text().strip()
+    active_name = get_active_project()
 
     table = Table(title="Projects")
     table.add_column("Active", justify="center", width=6)
@@ -174,9 +168,12 @@ def get_active_project(ctx: click.Context) -> str:
     """Get the active project name from ctx override or ~/.signalops/active_project."""
     if ctx.obj.get("project"):
         return str(ctx.obj["project"])
-    active_file = DEFAULT_CREDENTIALS_DIR / "active_project"
-    if active_file.exists():
-        return active_file.read_text().strip()
+
+    from signalops.config.loader import get_active_project as _get_active
+
+    name = _get_active()
+    if name is not None:
+        return name
     raise click.UsageError("No active project. Run: signalops project set <name>")
 
 
