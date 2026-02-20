@@ -1,0 +1,54 @@
+"""SignalOps CLI — main entry point."""
+
+import click
+from dotenv import load_dotenv
+from rich.console import Console
+
+# Load .env on startup
+load_dotenv()
+
+console = Console()
+
+
+@click.group()
+@click.option("--project", "-p", default=None, help="Override active project")
+@click.option("--dry-run", is_flag=True, default=False, help="Preview without side effects")
+@click.option("--verbose", "-v", is_flag=True, default=False, help="Debug logging")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["table", "json"]),
+    default="table",
+    help="Output format",
+)
+@click.pass_context
+def cli(ctx, project, dry_run, verbose, output_format):
+    """SignalOps — Agentic social lead finder + outreach workbench."""
+    ctx.ensure_object(dict)
+    ctx.obj["project"] = project
+    ctx.obj["dry_run"] = dry_run
+    ctx.obj["verbose"] = verbose
+    ctx.obj["format"] = output_format
+    ctx.obj["console"] = console
+
+    if verbose:
+        import logging
+
+        logging.basicConfig(level=logging.DEBUG)
+
+
+# Register sub-groups and commands (lazy-imported modules define their groups)
+from signalops.cli.project import project_group  # noqa: E402
+from signalops.cli.collect import run_group  # noqa: E402
+from signalops.cli.approve import queue_group  # noqa: E402
+from signalops.cli.stats import stats_cmd  # noqa: E402
+from signalops.cli.export import export_group  # noqa: E402
+
+cli.add_command(project_group, "project")
+cli.add_command(run_group, "run")
+cli.add_command(queue_group, "queue")
+cli.add_command(stats_cmd, "stats")
+cli.add_command(export_group, "export")
+
+if __name__ == "__main__":
+    cli()
