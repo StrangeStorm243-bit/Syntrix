@@ -150,9 +150,9 @@ def test_project_set_and_list(runner, tmp_path, monkeypatch):
     """Test setting and listing a project."""
     import yaml
 
-    # Must patch where the names are used (in project.py), not where defined
+    # Patch projects dir in project.py and credentials dir in loader.py
     monkeypatch.setattr("signalops.cli.project.DEFAULT_PROJECTS_DIR", tmp_path)
-    monkeypatch.setattr("signalops.cli.project.DEFAULT_CREDENTIALS_DIR", tmp_path / ".creds")
+    monkeypatch.setattr("signalops.config.loader.DEFAULT_CREDENTIALS_DIR", tmp_path / ".creds")
 
     # Create a project YAML
     config = {

@@ -132,6 +132,58 @@ class XConnector(Connector):
         post_id: str = result["data"]["id"]
         return post_id
 
+    def get_tweet_metrics(self, tweet_ids: list[str]) -> dict[str, dict[str, int]]:
+        """Fetch current engagement metrics for tweets.
+
+        Used by outcome tracker to check if sent replies got engagement.
+        Uses X API v2 GET /2/tweets with tweet.fields=public_metrics.
+        Batches up to 100 IDs per request.
+
+        Returns: {"tweet_id": {"likes": N, "retweets": N, "replies": N, "views": N}}
+        """
+        if not tweet_ids:
+            return {}
+
+        result: dict[str, dict[str, int]] = {}
+
+        # X API allows max 100 IDs per request
+        for i in range(0, len(tweet_ids), 100):
+            batch = tweet_ids[i : i + 100]
+            self._wait_for_rate_limit()
+
+            response = self._client.get(
+                "/tweets",
+                params={
+                    "ids": ",".join(batch),
+                    "tweet.fields": "public_metrics",
+                },
+            )
+            self._update_rate_limits(response)
+
+            if response.status_code == 429:
+                logger.warning("Rate limited during metrics fetch, returning partial results")
+                break
+
+            response.raise_for_status()
+            data = response.json()
+
+            for tweet in data.get("data", []):
+                metrics = tweet.get("public_metrics", {})
+                result[tweet["id"]] = {
+                    "likes": metrics.get("like_count", 0),
+                    "retweets": metrics.get("retweet_count", 0),
+                    "replies": metrics.get("reply_count", 0),
+                    "views": metrics.get("impression_count", 0),
+                }
+
+            # Track deleted/unavailable tweets from errors
+            for error in data.get("errors", []):
+                tweet_id = error.get("resource_id", error.get("value", ""))
+                if tweet_id and tweet_id not in result:
+                    result[tweet_id] = {"likes": 0, "retweets": 0, "replies": 0, "views": 0}
+
+        return result
+
     def health_check(self) -> bool:
         """Verify API connectivity and auth."""
         try:

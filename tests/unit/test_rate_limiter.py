@@ -3,6 +3,7 @@
 import time
 
 from signalops.connectors.rate_limiter import RateLimiter
+from signalops.storage.cache import InMemoryCache
 
 
 class TestWithinLimit:
@@ -106,3 +107,37 @@ class TestJitter:
         waits = [rl._add_jitter(10.0) for _ in range(100)]
         for w in waits:
             assert 8.0 <= w <= 12.0  # 10 ± 20%
+
+
+class TestCachePersistence:
+    def test_persist_header_state_to_cache(self) -> None:
+        cache = InMemoryCache()
+        rl = RateLimiter(max_requests=300, window_seconds=900, cache=cache)
+        future = str(int(time.time()) + 60)
+        rl.update_from_headers({"x-rate-limit-remaining": "5", "x-rate-limit-reset": future})
+        # Cache should have the state
+        assert cache.exists("ratelimit:default")
+
+    def test_restore_header_state_from_cache(self) -> None:
+        cache = InMemoryCache()
+        # First limiter persists state
+        rl1 = RateLimiter(max_requests=300, window_seconds=900, cache=cache)
+        future = str(int(time.time()) + 60)
+        rl1.update_from_headers({"x-rate-limit-remaining": "5", "x-rate-limit-reset": future})
+        # Second limiter restores from cache
+        rl2 = RateLimiter(max_requests=300, window_seconds=900, cache=cache)
+        assert rl2.tokens == 5
+
+    def test_no_cache_no_error(self) -> None:
+        """Rate limiter works fine without cache."""
+        rl = RateLimiter(max_requests=10, window_seconds=900, cache=None)
+        assert rl.acquire() == 0.0
+
+    def test_custom_cache_key(self) -> None:
+        cache = InMemoryCache()
+        rl = RateLimiter(
+            max_requests=300, window_seconds=900, cache=cache, cache_key="ratelimit:x-search"
+        )
+        rl.update_from_headers({"x-rate-limit-remaining": "3"})
+        assert cache.exists("ratelimit:x-search")
+        assert not cache.exists("ratelimit:default")
