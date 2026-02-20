@@ -33,11 +33,9 @@ class CircuitBreaker:
     def is_open(self) -> bool:
         if not self._tripped:
             return False
-        # Check if recovery timeout has elapsed
         if self._last_failure_time is not None:
             elapsed = time.monotonic() - self._last_failure_time
             if elapsed >= self._recovery_timeout:
-                # Move to half-open — allow one attempt
                 return False
         return True
 
@@ -70,7 +68,6 @@ class LLMGateway:
         self._default_model = default_model
 
     def _get_provider(self, model: str) -> LLMProvider:
-        """Route to provider based on model name prefix. Cache instances."""
         if model in self._providers:
             return self._providers[model]
 
@@ -103,7 +100,6 @@ class LLMGateway:
         model: str | None = None,
         **kwargs,
     ) -> str:
-        """Complete with retry logic and circuit breaking."""
         model = model or self._default_model
         provider = self._get_provider(model)
 
@@ -127,7 +123,7 @@ class LLMGateway:
                     e,
                 )
                 if attempt < 2:
-                    time.sleep(2**attempt)  # 1s, 2s
+                    time.sleep(2**attempt)
 
         raise RuntimeError(f"All 3 retry attempts failed for model {model}") from last_error
 
@@ -138,7 +134,6 @@ class LLMGateway:
         model: str | None = None,
         **kwargs,
     ) -> dict:
-        """Complete JSON with retry logic and circuit breaking."""
         model = model or self._default_model
         provider = self._get_provider(model)
 
