@@ -1,0 +1,91 @@
+project_id: salesense
+project_name: "SaleSense"
+description: >
+  SaleSense is a conversational AI platform that qualifies website
+  visitors in real-time and books meetings automatically.
+product_url: "https://salesense.io"
+
+queries:
+  - text: '"website visitors" (qualify OR "convert" OR "losing leads") -is:retweet lang:en'
+    label: "Lead qualification pain"
+  - text: '("chat widget" OR "live chat" OR "chatbot") (bad OR terrible OR "doesn''t work" OR replacing) -is:retweet lang:en'
+    label: "Chat tool frustration"
+  - text: '("looking for" OR "anyone use") ("lead qualification" OR "visitor engagement" OR "meeting scheduler") -is:retweet lang:en'
+    label: "Active tool search"
+  - text: '(drift OR intercom OR qualified.com OR "calendly bot") (expensive OR "switching from" OR alternative) -is:retweet lang:en'
+    label: "Competitor dissatisfaction"
+
+icp:
+  min_followers: 150
+  languages: ["en"]
+  exclude_bios_containing: ["bot", "giveaway", "follow back"]
+  prefer_bios_containing: ["sales", "revenue", "growth", "founder", "CEO", "VP sales", "SDR", "BDR", "marketing"]
+
+relevance:
+  system_prompt: >
+    You are a relevance judge for SaleSense, a conversational AI platform
+    that qualifies website visitors and books meetings. Evaluate whether
+    this tweet indicates the author might benefit from automated visitor
+    qualification. Consider: Are they struggling with lead conversion?
+    Frustrated with their current chat tool? Looking for ways to automate
+    meeting booking?
+  positive_signals:
+    - Expressing frustration with manual lead qualification
+    - Discussing poor website visitor conversion rates
+    - Asking for chatbot or live chat recommendations
+    - Mentioning they're losing leads because response time is too slow
+    - Sales/marketing leaders discussing pipeline efficiency
+  negative_signals:
+    - Generic marketing advice about websites
+    - Posts about building chatbots as a developer
+    - Casual mentions of "chat" unrelated to business
+    - Crypto/Web3 bot discussions
+  keywords_required: []
+  keywords_excluded: ["hiring", "job posting", "NFT", "crypto"]
+
+scoring:
+  relevance_judgment: 0.30
+  author_authority: 0.30
+  engagement_signals: 0.10
+  recency: 0.15
+  intent_strength: 0.15
+
+persona:
+  name: "Jordan from SaleSense"
+  role: "growth consultant"
+  tone: "curious"
+  voice_notes: >
+    Lead with genuine curiosity about their situation. Ask a question
+    that shows you understand their problem. Only mention SaleSense
+    if they're actively looking for solutions. Keep replies conversational
+    and under 220 characters. No corporate speak.
+  example_reply: >
+    Curious — what's your current flow for qualifying visitors? We've
+    seen teams cut response time from hours to seconds with conversational
+    AI. Happy to share what's working.
+
+templates:
+  - id: pain_point
+    name: "Pain Point Response"
+    template: >
+      {{curious_question}} — {{relevant_insight}}. {{soft_cta}}
+    use_when: "Author is expressing frustration with lead qualification or chat tools"
+  - id: competitor_switch
+    name: "Competitor Switch Response"
+    template: >
+      {{empathy}} — a lot of teams are making that move. {{differentiator}}
+    use_when: "Author is switching from or frustrated with a competitor"
+
+notifications:
+  enabled: true
+  min_score_to_notify: 70
+  slack_webhook: "${SLACK_WEBHOOK_SALESENSE}"
+
+rate_limits:
+  max_replies_per_hour: 4
+  max_replies_per_day: 15
+
+llm:
+  judge_model: "claude-sonnet-4-6"
+  draft_model: "claude-sonnet-4-6"
+  temperature: 0.4
