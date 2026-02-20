@@ -48,6 +48,8 @@ import signalops.cli.score  # noqa: E402, F401 — registers score command on ru
 import signalops.cli.send  # noqa: E402, F401 — registers send command on queue_group
 from signalops.cli.approve import queue_group  # noqa: E402
 from signalops.cli.collect import run_group  # noqa: E402
+from signalops.cli.correct import correct_cmd  # noqa: E402
+from signalops.cli.eval import eval_group  # noqa: E402
 from signalops.cli.export import export_group  # noqa: E402
 from signalops.cli.project import project_group  # noqa: E402
 from signalops.cli.stats import stats_cmd  # noqa: E402
@@ -57,6 +59,8 @@ cli.add_command(run_group, "run")
 cli.add_command(queue_group, "queue")
 cli.add_command(stats_cmd, "stats")
 cli.add_command(export_group, "export")
+cli.add_command(correct_cmd, "correct")
+cli.add_command(eval_group, "eval")
 
 if __name__ == "__main__":
     cli()
