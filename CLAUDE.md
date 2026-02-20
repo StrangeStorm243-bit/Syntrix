@@ -90,3 +90,40 @@ Each project is defined by a YAML file in `projects/` that drives the entire pip
 - `llm` — Model selection per stage
 
 See `src/signalops/config/schema.py` for the full Pydantic schema.
+
+## Workflow Rules
+
+### Plan First
+- Enter plan mode for any non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan — don't keep pushing
+- Write detailed specs upfront to reduce ambiguity
+
+### Subagent Strategy
+- Use subagents liberally to keep the main context window clean
+- Offload research, exploration, and parallel analysis to subagents
+- One task per subagent for focused execution
+
+### Verification Before Done
+- Never mark a task complete without proving it works
+- Run tests, check logs, demonstrate correctness
+- Ask: "Would a staff engineer approve this?"
+
+### Self-Improvement
+- After any correction, update `tasks/lessons.md` with the pattern
+- Write rules that prevent the same mistake recurring
+- Review lessons at session start
+
+### Task Tracking
+1. Write plan to `tasks/todo.md` with checkable items
+2. Check in before starting implementation
+3. Mark items complete as you go
+4. Provide a high-level summary at each step
+5. Add a review section to `tasks/todo.md`
+6. Capture lessons in `tasks/lessons.md` after corrections
+
+### Engineering Standards
+- **Simplicity first** — minimal impact, minimal code
+- **No laziness** — find root causes, no temporary fixes
+- **Minimal blast radius** — touch only what's necessary
+- **Demand elegance** — for non-trivial changes, pause and consider a cleaner approach
+- **Autonomous bug fixing** — diagnose and resolve without hand-holding
