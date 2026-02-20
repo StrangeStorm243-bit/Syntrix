@@ -1,0 +1,25 @@
+site_name: SignalOps
+site_description: Agentic social lead finder + outreach workbench
+site_url: https://github.com/StrangeStorm243-bit/Syntrix
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.expand
+
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Quick Start: quickstart.md
+  - CLI Reference: cli-reference.md
+  - Configuration: config-reference.md
+  - Architecture: architecture.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true

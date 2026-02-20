@@ -4,10 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "signalops"
-version = "0.1.0"
+version = "0.2.0"
 description = "Agentic social lead finder + outreach workbench"
+readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
+authors = [{name = "StrangeStorm243"}]
+keywords = ["social-selling", "lead-generation", "outreach", "x-api", "llm", "agentic"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications",
+    "Typing :: Typed",
+]
+
 dependencies = [
     "click>=8.1",
     "rich>=13.0",
@@ -22,6 +35,11 @@ dependencies = [
     "redis>=5.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/StrangeStorm243-bit/Syntrix"
+Repository = "https://github.com/StrangeStorm243-bit/Syntrix"
+Issues = "https://github.com/StrangeStorm243-bit/Syntrix/issues"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
@@ -32,6 +50,9 @@ dev = [
     "respx>=0.21",
     "types-PyYAML>=6.0",
     "scikit-learn>=1.4",
+]
+docs = [
+    "mkdocs-material>=9.5",
 ]
 
 [project.scripts]
