@@ -107,6 +107,18 @@ class SenderStage:
                 )
                 sent_count += 1
             except Exception as e:
+                from signalops.exceptions import AuthenticationError, RateLimitError
+
+                if isinstance(e, RateLimitError):
+                    logger.warning("Rate limited while sending draft %d", draft.id)
+                    skipped_rate_limit += len(drafts) - sent_count - failed_count
+                    break
+                if isinstance(e, AuthenticationError):
+                    logger.error("Auth error sending draft %d: %s", draft.id, e)
+                    draft.status = DraftStatus.FAILED  # type: ignore[assignment]
+                    self.session.commit()
+                    failed_count += 1
+                    break
                 logger.error("Failed to send draft %d: %s", draft.id, e)
                 draft.status = DraftStatus.FAILED  # type: ignore[assignment]
                 self.session.commit()
@@ -154,5 +166,21 @@ class SenderStage:
         )
         if sent_today >= max_per_day:
             return False, f"Daily limit reached ({sent_today}/{max_per_day})"
+
+        # Monthly cap (optional, 0 = disabled)
+        max_per_month: int = config.rate_limits.get("max_replies_per_month", 0)
+        if max_per_month > 0:
+            month_ago = now - timedelta(days=30)
+            sent_month = (
+                self.session.query(Draft)
+                .filter(
+                    Draft.project_id == project_id,
+                    Draft.status == DraftStatus.SENT,
+                    Draft.sent_at >= month_ago,
+                )
+                .count()
+            )
+            if sent_month >= max_per_month:
+                return False, f"Monthly limit reached ({sent_month}/{max_per_month})"
 
         return True, ""

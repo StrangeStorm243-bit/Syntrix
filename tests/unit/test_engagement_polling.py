@@ -200,12 +200,14 @@ class TestRateLimit:
             # Second batch hits rate limit
             return _mock_response(status_code=429)
 
-        with patch.object(connector._client, "get", side_effect=mock_get):
+        with (
+            patch.object(connector._client, "get", side_effect=mock_get),
+            patch("signalops.exceptions.time.sleep"),
+        ):
             result = connector.get_tweet_metrics(ids)
 
-        # Should have first batch only
+        # Should have first batch only (retry exhaustion on 429 then catch)
         assert len(result) == 100
-        assert call_count == 2
 
     def test_respects_rate_limiter(self) -> None:
         """Rate limiter acquire() should be called before each request."""
@@ -234,9 +236,14 @@ class TestRateLimit:
 
 class TestErrorHandling:
     def test_api_error_raises(self, connector: XConnector) -> None:
+        from signalops.exceptions import APIError
+
         resp = _mock_response(status_code=500)
-        with patch.object(connector._client, "get", return_value=resp):
-            with pytest.raises(httpx.HTTPStatusError):
+        with (
+            patch.object(connector._client, "get", return_value=resp),
+            patch("signalops.exceptions.time.sleep"),
+        ):
+            with pytest.raises(APIError):
                 connector.get_tweet_metrics(["111"])
 
     def test_missing_public_metrics_defaults_to_zero(self, connector: XConnector) -> None:

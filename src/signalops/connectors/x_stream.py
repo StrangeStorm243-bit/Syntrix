@@ -15,6 +15,8 @@ from typing import Any
 
 import httpx
 
+from signalops.exceptions import StreamTierError as StreamTierError  # re-export
+
 from .base import RawPost
 from .rate_limiter import RateLimiter
 
@@ -28,10 +30,6 @@ RULES_URL = f"{BASE_URL}/tweets/search/stream/rules"
 INITIAL_BACKOFF = 1.0
 MAX_BACKOFF = 60.0
 BACKOFF_MULTIPLIER = 2.0
-
-
-class StreamTierError(Exception):
-    """Raised when Filtered Stream access is not available."""
 
 
 class StreamConnector:

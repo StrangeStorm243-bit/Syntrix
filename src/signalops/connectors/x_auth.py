@@ -13,6 +13,12 @@ from typing import Any
 import httpx
 
 from signalops.config.defaults import DEFAULT_CREDENTIALS_DIR
+from signalops.exceptions import (
+    APIError,
+    AuthenticationError,
+    RateLimitError,
+    retry_with_backoff,
+)
 
 CREDENTIALS_FILE = "credentials.json"
 TOKEN_URL = "https://api.x.com/2/oauth2/token"
@@ -54,6 +60,22 @@ def build_auth_url(
     return f"{AUTHORIZE_URL}?{query}"
 
 
+def _raise_for_token_response(response: httpx.Response) -> None:
+    """Map OAuth token response errors to typed exceptions."""
+    status = response.status_code
+    if 200 <= status < 300:
+        return
+    url = str(response.url)
+    if status == 429:
+        retry_after = float(response.headers.get("retry-after", "60"))
+        raise RateLimitError(f"Token endpoint rate limited: {url}", retry_after=retry_after)
+    if status in (401, 403):
+        raise AuthenticationError(f"Invalid credentials for token exchange ({status})")
+    if status >= 500:
+        raise APIError(f"Token server error {status}", status_code=status, retryable=True)
+    raise APIError(f"Token request failed ({status})", status_code=status, retryable=False)
+
+
 def exchange_code(
     client_id: str,
     client_secret: str | None,
@@ -75,17 +97,19 @@ def exchange_code(
     else:
         data["client_id"] = client_id
 
-    with httpx.Client() as client:
-        response = client.post(
-            TOKEN_URL,
-            data=data,
-            auth=auth,  # type: ignore[arg-type]
-        )
-        response.raise_for_status()
-        tokens: dict[str, Any] = response.json()
+    def _do_exchange() -> dict[str, Any]:
+        with httpx.Client() as client:
+            response = client.post(
+                TOKEN_URL,
+                data=data,
+                auth=auth,  # type: ignore[arg-type]
+            )
+            _raise_for_token_response(response)
+            tokens: dict[str, Any] = response.json()
+        tokens["expires_at"] = time.time() + tokens.get("expires_in", 7200)
+        return tokens
 
-    tokens["expires_at"] = time.time() + tokens.get("expires_in", 7200)
-    return tokens
+    return retry_with_backoff(_do_exchange, max_retries=3, base_delay=1.0)
 
 
 def refresh_token(
@@ -105,17 +129,19 @@ def refresh_token(
     else:
         data["client_id"] = client_id
 
-    with httpx.Client() as client:
-        response = client.post(
-            TOKEN_URL,
-            data=data,
-            auth=auth,  # type: ignore[arg-type]
-        )
-        response.raise_for_status()
-        tokens: dict[str, Any] = response.json()
+    def _do_refresh() -> dict[str, Any]:
+        with httpx.Client() as client:
+            response = client.post(
+                TOKEN_URL,
+                data=data,
+                auth=auth,  # type: ignore[arg-type]
+            )
+            _raise_for_token_response(response)
+            tokens: dict[str, Any] = response.json()
+        tokens["expires_at"] = time.time() + tokens.get("expires_in", 7200)
+        return tokens
 
-    tokens["expires_at"] = time.time() + tokens.get("expires_in", 7200)
-    return tokens
+    return retry_with_backoff(_do_refresh, max_retries=3, base_delay=1.0)
 
 
 def store_credentials(

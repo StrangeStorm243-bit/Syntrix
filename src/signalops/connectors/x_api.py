@@ -9,6 +9,13 @@ from typing import Any
 
 import httpx
 
+from signalops.exceptions import (
+    APIError,
+    AuthenticationError,
+    RateLimitError,
+    retry_with_backoff,
+)
+
 from .base import Connector, RawPost
 from .rate_limiter import RateLimiter
 
@@ -43,7 +50,7 @@ class XConnector(Connector):
             base_url=BASE_URL,
             headers={
                 "Authorization": f"Bearer {bearer_token}",
-                "User-Agent": "SignalOps/0.1.0",
+                "User-Agent": "SignalOps/0.2.0",
             },
             timeout=timeout,
         )
@@ -55,117 +62,121 @@ class XConnector(Connector):
         max_results: int = 100,
     ) -> list[RawPost]:
         """Search for recent tweets matching query."""
-        self._wait_for_rate_limit()
 
-        params: dict[str, Any] = {
-            "query": query,
-            "max_results": min(max_results, 100),
-            "tweet.fields": TWEET_FIELDS,
-            "user.fields": USER_FIELDS,
-            "expansions": EXPANSIONS,
-        }
-        if since_id:
-            params["since_id"] = since_id
+        def _do_search() -> list[RawPost]:
+            self._wait_for_rate_limit()
 
-        response = self._client.get("/tweets/search/recent", params=params)
-        self._update_rate_limits(response)
+            params: dict[str, Any] = {
+                "query": query,
+                "max_results": min(max_results, 100),
+                "tweet.fields": TWEET_FIELDS,
+                "user.fields": USER_FIELDS,
+                "expansions": EXPANSIONS,
+            }
+            if since_id:
+                params["since_id"] = since_id
 
-        if response.status_code == 429:
-            retry_after = int(response.headers.get("retry-after", 60))
-            logger.warning("Rate limited. Retry after %d seconds.", retry_after)
-            return []
+            response = self._client.get("/tweets/search/recent", params=params)
+            self._update_rate_limits(response)
+            self._raise_for_status(response)
 
-        response.raise_for_status()
-        data = response.json()
+            data = response.json()
+            if "data" not in data:
+                return []
 
-        if "data" not in data:
-            return []
+            # Build user lookup from includes
+            users: dict[str, Any] = {}
+            for user in data.get("includes", {}).get("users", []):
+                users[user["id"]] = user
 
-        # Build user lookup from includes
-        users = {}
-        for user in data.get("includes", {}).get("users", []):
-            users[user["id"]] = user
+            posts: list[RawPost] = []
+            for tweet in data["data"]:
+                post = self._parse_tweet(tweet, users)
+                if post:
+                    posts.append(post)
 
-        posts = []
-        for tweet in data["data"]:
-            post = self._parse_tweet(tweet, users)
-            if post:
-                posts.append(post)
+            return posts
 
-        return posts
+        return retry_with_backoff(_do_search, max_retries=3, base_delay=2.0)
 
     def get_user(self, user_id: str) -> dict[str, Any]:
         """Fetch user profile by ID."""
-        self._wait_for_rate_limit()
 
-        response = self._client.get(
-            f"/users/{user_id}",
-            params={"user.fields": USER_FIELDS},
-        )
-        self._update_rate_limits(response)
-        response.raise_for_status()
-        data: dict[str, Any] = response.json().get("data", {})
-        return data
+        def _do_get_user() -> dict[str, Any]:
+            self._wait_for_rate_limit()
+
+            response = self._client.get(
+                f"/users/{user_id}",
+                params={"user.fields": USER_FIELDS},
+            )
+            self._update_rate_limits(response)
+            self._raise_for_status(response)
+            data: dict[str, Any] = response.json().get("data", {})
+            return data
+
+        return retry_with_backoff(_do_get_user, max_retries=3, base_delay=2.0)
 
     def post_reply(self, in_reply_to_id: str, text: str) -> str:
         """Post a reply tweet. Requires user OAuth token."""
         if not self.user_token:
             raise RuntimeError("User OAuth token required for posting replies")
 
-        self._wait_for_rate_limit()
+        def _do_post_reply() -> str:
+            self._wait_for_rate_limit()
 
-        # Use user token for write operations
-        headers = {
-            "Authorization": f"Bearer {self.user_token}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "text": text,
-            "reply": {"in_reply_to_tweet_id": in_reply_to_id},
-        }
+            headers = {
+                "Authorization": f"Bearer {self.user_token}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "text": text,
+                "reply": {"in_reply_to_tweet_id": in_reply_to_id},
+            }
 
-        response = self._client.post("/tweets", json=payload, headers=headers)
-        self._update_rate_limits(response)
-        response.raise_for_status()
+            response = self._client.post("/tweets", json=payload, headers=headers)
+            self._update_rate_limits(response)
+            self._raise_for_status(response)
 
-        result: dict[str, Any] = response.json()
-        post_id: str = result["data"]["id"]
-        return post_id
+            result: dict[str, Any] = response.json()
+            post_id: str = result["data"]["id"]
+            return post_id
+
+        return retry_with_backoff(_do_post_reply, max_retries=3, base_delay=2.0)
 
     def get_tweet_metrics(self, tweet_ids: list[str]) -> dict[str, dict[str, int]]:
         """Fetch current engagement metrics for tweets.
 
         Used by outcome tracker to check if sent replies got engagement.
-        Uses X API v2 GET /2/tweets with tweet.fields=public_metrics.
         Batches up to 100 IDs per request.
-
-        Returns: {"tweet_id": {"likes": N, "retweets": N, "replies": N, "views": N}}
         """
         if not tweet_ids:
             return {}
 
         result: dict[str, dict[str, int]] = {}
 
-        # X API allows max 100 IDs per request
         for i in range(0, len(tweet_ids), 100):
             batch = tweet_ids[i : i + 100]
-            self._wait_for_rate_limit()
 
-            response = self._client.get(
-                "/tweets",
-                params={
-                    "ids": ",".join(batch),
-                    "tweet.fields": "public_metrics",
-                },
-            )
-            self._update_rate_limits(response)
+            def _do_fetch_batch() -> dict[str, Any]:
+                self._wait_for_rate_limit()
 
-            if response.status_code == 429:
+                response = self._client.get(
+                    "/tweets",
+                    params={
+                        "ids": ",".join(batch),
+                        "tweet.fields": "public_metrics",
+                    },
+                )
+                self._update_rate_limits(response)
+                self._raise_for_status(response)
+                data: dict[str, Any] = response.json()
+                return data
+
+            try:
+                data = retry_with_backoff(_do_fetch_batch, max_retries=3, base_delay=2.0)
+            except RateLimitError:
                 logger.warning("Rate limited during metrics fetch, returning partial results")
                 break
-
-            response.raise_for_status()
-            data = response.json()
 
             for tweet in data.get("data", []):
                 metrics = tweet.get("public_metrics", {})
@@ -194,6 +205,31 @@ class XConnector(Connector):
             return response.status_code == 200
         except httpx.HTTPError:
             return False
+
+    def _raise_for_status(self, response: httpx.Response) -> None:
+        """Map HTTP status codes to typed exceptions."""
+        status = response.status_code
+        if 200 <= status < 300:
+            return
+
+        url = str(response.url)
+        if status == 429:
+            retry_after = float(response.headers.get("retry-after", "60"))
+            raise RateLimitError(f"Rate limited on {url}", retry_after=retry_after)
+        if status in (401, 403):
+            raise AuthenticationError(f"Auth failed ({status}) on {url}")
+        if status >= 500:
+            raise APIError(
+                f"Server error {status} on {url}",
+                status_code=status,
+                retryable=True,
+            )
+        # Other 4xx — client error, not retryable
+        raise APIError(
+            f"Client error {status} on {url}",
+            status_code=status,
+            retryable=False,
+        )
 
     def _parse_tweet(self, tweet: dict[str, Any], users: dict[str, Any]) -> RawPost | None:
         """Parse a single X API v2 tweet into a RawPost."""

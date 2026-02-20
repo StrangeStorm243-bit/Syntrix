@@ -67,7 +67,18 @@ class CollectorStage:
                     )
                     self._cache_search(query_cfg.text, posts)
                 except Exception as e:
-                    logger.error("Failed to search query '%s': %s", query_cfg.label, e)
+                    from signalops.exceptions import AuthenticationError, RateLimitError
+
+                    if isinstance(e, RateLimitError):
+                        logger.warning("Rate limited on query '%s': %s", query_cfg.label, e)
+                    elif isinstance(e, AuthenticationError):
+                        logger.error("Auth error on query '%s': %s", query_cfg.label, e)
+                        per_query.append(
+                            {"label": query_cfg.label, "new": 0, "skipped": 0, "error": str(e)}
+                        )
+                        break  # auth failure affects all queries
+                    else:
+                        logger.error("Failed to search query '%s': %s", query_cfg.label, e)
                     per_query.append(
                         {"label": query_cfg.label, "new": 0, "skipped": 0, "error": str(e)}
                     )

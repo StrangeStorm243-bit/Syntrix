@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -29,11 +30,16 @@ class DiscordNotifier(Notifier):
             embed = self._build_embed(title, message, fields)
             payload: dict[str, Any] = {"embeds": [embed]}
 
-            resp = httpx.post(self.webhook_url, json=payload, timeout=10.0)
-            if resp.status_code in (200, 204):
-                logger.info("Discord notification sent: %s", title)
-                return True
-            logger.warning("Discord webhook returned %d: %s", resp.status_code, resp.text)
+            for attempt in range(3):
+                resp = httpx.post(self.webhook_url, json=payload, timeout=10.0)
+                if resp.status_code in (200, 204):
+                    logger.info("Discord notification sent: %s", title)
+                    return True
+                if resp.status_code >= 500 and attempt < 2:
+                    time.sleep(2**attempt)
+                    continue
+                logger.warning("Discord webhook returned %d: %s", resp.status_code, resp.text)
+                return False
             return False
         except Exception:
             logger.exception("Discord notification failed")

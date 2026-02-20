@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -25,11 +26,16 @@ class SlackNotifier(Notifier):
             blocks = self._build_blocks(title, message, fields)
             payload: dict[str, Any] = {"blocks": blocks}
 
-            resp = httpx.post(self.webhook_url, json=payload, timeout=10.0)
-            if resp.status_code == 200 and resp.text == "ok":
-                logger.info("Slack notification sent: %s", title)
-                return True
-            logger.warning("Slack webhook returned %d: %s", resp.status_code, resp.text)
+            for attempt in range(3):
+                resp = httpx.post(self.webhook_url, json=payload, timeout=10.0)
+                if resp.status_code == 200 and resp.text == "ok":
+                    logger.info("Slack notification sent: %s", title)
+                    return True
+                if resp.status_code >= 500 and attempt < 2:
+                    time.sleep(2**attempt)
+                    continue
+                logger.warning("Slack webhook returned %d: %s", resp.status_code, resp.text)
+                return False
             return False
         except Exception:
             logger.exception("Slack notification failed")
