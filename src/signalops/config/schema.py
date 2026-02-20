@@ -75,6 +75,24 @@ class NotificationConfig(BaseModel):
     slack_webhook: str | None = None
 
 
+class RedisConfig(BaseModel):
+    """Redis caching configuration. Disabled by default — falls back to in-memory."""
+
+    url: str = "redis://localhost:6379/0"
+    enabled: bool = False
+    search_cache_ttl: int = 1800  # 30 min
+    dedup_ttl: int = 86400  # 24 hours
+    rate_limit_ttl: int = 900  # 15 min
+
+
+class StreamConfig(BaseModel):
+    """Filtered Stream configuration (requires X API Pro tier)."""
+
+    enabled: bool = False
+    rules: list[str] = []
+    backfill_minutes: int = 5
+
+
 class ProjectConfig(BaseModel):
     """Top-level project configuration loaded from project.yaml."""
 
@@ -89,5 +107,7 @@ class ProjectConfig(BaseModel):
     persona: PersonaConfig
     templates: list[TemplateConfig] = []
     notifications: NotificationConfig = NotificationConfig()
+    redis: RedisConfig = RedisConfig()
+    stream: StreamConfig = StreamConfig()
     rate_limits: dict[str, Any] = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
     llm: dict[str, Any] = {"judge_model": "claude-sonnet-4-6", "draft_model": "claude-sonnet-4-6"}
