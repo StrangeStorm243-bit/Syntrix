@@ -1,0 +1,93 @@
+project_id: spectra
+project_name: "Spectra AI"
+description: >
+  Spectra is an AI-powered code review tool that catches bugs,
+  security issues, and performance problems before they ship.
+product_url: "https://spectra.dev"
+
+queries:
+  - text: '"code review" (slow OR painful OR annoying OR "takes forever") -is:retweet lang:en'
+    label: "Code review pain points"
+  - text: '"pull request" (bugs OR "missed bug" OR "slipped through") -is:retweet lang:en'
+    label: "Bugs slipping through PRs"
+  - text: '("looking for" OR "anyone recommend") ("code review tool" OR "PR automation") -is:retweet lang:en'
+    label: "Active tool search"
+  - text: '(sonarqube OR codeclimate OR "code rabbit" OR snyk) (slow OR expensive OR "switching from") -is:retweet lang:en'
+    label: "Competitor dissatisfaction"
+
+icp:
+  min_followers: 200
+  languages: ["en"]
+  exclude_bios_containing: ["bot", "giveaway", "follow back", "crypto shill"]
+  prefer_bios_containing: ["engineer", "developer", "CTO", "tech lead", "devops", "founder"]
+
+relevance:
+  system_prompt: >
+    You are a relevance judge for Spectra AI, a code review tool.
+    Evaluate whether this tweet indicates the author might benefit from
+    an AI-powered code review tool. Consider: Are they expressing pain
+    with code reviews? Looking for tooling? Discussing PR quality issues?
+    A relevant tweet shows genuine need or active interest, not just
+    a passing mention of the topic.
+  positive_signals:
+    - Expressing frustration with manual code review processes
+    - Asking for tool recommendations in the code review space
+    - Discussing bugs that escaped code review
+    - Mentioning they're evaluating or switching code review tools
+    - Technical leaders discussing team productivity around PRs
+  negative_signals:
+    - Just sharing a blog post about code review in general
+    - Recruiting/hiring posts mentioning code review as a skill
+    - Jokes or memes about code review without genuine pain
+    - Bot-like or spam accounts discussing the topic
+    - Posts about reviewing code in an educational context only
+  keywords_required: []
+  keywords_excluded: ["hiring", "job", "we're looking for", "apply now"]
+
+scoring:
+  relevance_judgment: 0.35
+  author_authority: 0.25
+  engagement_signals: 0.15
+  recency: 0.15
+  intent_strength: 0.10
+
+persona:
+  name: "Alex from Spectra"
+  role: "developer advocate"
+  tone: "helpful"
+  voice_notes: >
+    Be genuinely helpful first. Lead with empathy for their problem.
+    Only mention Spectra if it's truly relevant — never force a plug.
+    Use technical language appropriate for developers. Keep it under
+    200 characters. No hashtags. No emojis unless the original poster
+    used them. Sound human, not corporate.
+  example_reply: >
+    Totally feel that pain — we built Spectra specifically for this.
+    It catches the stuff humans miss in PRs. Happy to show you a demo
+    if you're evaluating options.
+
+templates:
+  - id: pain_point
+    name: "Pain Point Response"
+    template: >
+      {{empathy_statement}} — {{value_prop}}. {{soft_cta}}
+    use_when: "Author is expressing frustration with current workflow"
+  - id: tool_search
+    name: "Active Search Response"
+    template: >
+      {{relevant_answer}} — we built {{product}} for exactly this. {{proof_point}}
+    use_when: "Author is actively looking for a tool recommendation"
+
+notifications:
+  enabled: true
+  min_score_to_notify: 75
+  discord_webhook: "${DISCORD_WEBHOOK_SPECTRA}"
+
+rate_limits:
+  max_replies_per_hour: 5
+  max_replies_per_day: 20
+
+llm:
+  judge_model: "claude-sonnet-4-6"
+  draft_model: "claude-sonnet-4-6"
+  temperature: 0.3
