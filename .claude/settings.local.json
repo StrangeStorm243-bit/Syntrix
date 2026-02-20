@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "Bash(python -c \"import sys,base64; print\\(base64.b64decode\\(sys.stdin.read\\(\\).replace\\(''\\\\n'',''''\\)\\).decode\\(\\)\\)\")",
+      "Bash(PYTHONUTF8=1 gh api:*)",
+      "Bash(python:*)",
+      "Bash(gh auth status:*)",
+      "Bash(PYTHONIOENCODING=utf-8 gh api:*)",
+      "Bash(gh search repos:*)",
+      "Bash(git push:*)",
+      "Bash(pip install:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
