@@ -3,7 +3,7 @@
 import click
 
 from signalops.cli.approve import queue_group
-from signalops.cli.project import get_active_project, load_active_config
+from signalops.cli.project import load_active_config
 
 
 @queue_group.command("send")
@@ -23,11 +23,11 @@ def queue_send(ctx, confirm):
     session = get_session(engine)
 
     # Lazy imports
-    from signalops.pipeline.sender import SenderStage
-    from signalops.connectors.x_api import XConnector
-    from signalops.connectors.rate_limiter import RateLimiter
-
     import os
+
+    from signalops.connectors.rate_limiter import RateLimiter
+    from signalops.connectors.x_api import XConnector
+    from signalops.pipeline.sender import SenderStage
 
     bearer_token = os.environ.get("X_BEARER_TOKEN", "")
     rate_limiter = RateLimiter(max_requests=55, window_seconds=900)

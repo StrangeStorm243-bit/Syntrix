@@ -8,6 +8,8 @@ from signalops.config.schema import ProjectConfig
 from signalops.models.judge_model import RelevanceJudge
 from signalops.storage.database import (
     Judgment as JudgmentRow,
+)
+from signalops.storage.database import (
     JudgmentLabel,
     NormalizedPost,
 )

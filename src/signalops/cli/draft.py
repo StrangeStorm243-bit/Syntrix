@@ -23,9 +23,9 @@ def draft_cmd(ctx, top):
     session = get_session(engine)
 
     # Lazy imports for pipeline stages
-    from signalops.pipeline.drafter import DrafterStage
     from signalops.models.draft_model import LLMDraftGenerator
     from signalops.models.llm_gateway import LLMGateway
+    from signalops.pipeline.drafter import DrafterStage
 
     gateway = LLMGateway()
     generator = LLMDraftGenerator(

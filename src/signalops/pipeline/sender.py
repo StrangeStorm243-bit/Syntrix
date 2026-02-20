@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
@@ -58,9 +58,6 @@ class SenderStage:
         skipped_rate_limit = 0
         failed_count = 0
 
-        max_per_hour = config.rate_limits.get("max_replies_per_hour", 5)
-        max_per_day = config.rate_limits.get("max_replies_per_day", 20)
-
         for draft in drafts:
             # Re-check per-item rate limits
             is_allowed, reason = self._check_rate_limits(project_id, config)
@@ -97,7 +94,7 @@ class SenderStage:
                     text=send_text,
                 )
                 draft.status = DraftStatus.SENT
-                draft.sent_at = datetime.now(timezone.utc)
+                draft.sent_at = datetime.now(UTC)
                 draft.sent_post_id = reply_id
                 self.session.commit()
 
@@ -132,7 +129,7 @@ class SenderStage:
         """Check if we're within rate limits. Returns (is_allowed, reason)."""
         from signalops.storage.database import Draft, DraftStatus
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         max_per_hour = config.rate_limits.get("max_replies_per_hour", 5)
         max_per_day = config.rate_limits.get("max_replies_per_day", 20)
 

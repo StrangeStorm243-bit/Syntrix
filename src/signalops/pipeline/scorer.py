@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
 from signalops.config.schema import ICPConfig, ProjectConfig
 from signalops.storage.database import (
     Judgment as JudgmentRow,
+)
+from signalops.storage.database import (
     JudgmentLabel,
     NormalizedPost,
+)
+from signalops.storage.database import (
     Score as ScoreRow,
 )
 
@@ -152,8 +156,8 @@ class ScorerStage:
         if created_at is None:
             return 0.0
         if created_at.tzinfo is None:
-            created_at = created_at.replace(tzinfo=timezone.utc)
-        hours_ago = (datetime.now(timezone.utc) - created_at).total_seconds() / 3600
+            created_at = created_at.replace(tzinfo=UTC)
+        hours_ago = (datetime.now(UTC) - created_at).total_seconds() / 3600
         if hours_ago <= 0:
             return 100.0
         if hours_ago >= 168:

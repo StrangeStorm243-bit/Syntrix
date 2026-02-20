@@ -1,6 +1,6 @@
 """Tests for the draft generator and drafter stage."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,13 +15,18 @@ from signalops.models.draft_model import Draft, LLMDraftGenerator
 from signalops.pipeline.drafter import DrafterStage
 from signalops.storage.database import (
     Draft as DraftRow,
+)
+from signalops.storage.database import (
     DraftStatus,
-    Judgment as JudgmentRow,
     JudgmentLabel,
     NormalizedPost,
+)
+from signalops.storage.database import (
+    Judgment as JudgmentRow,
+)
+from signalops.storage.database import (
     Score as ScoreRow,
 )
-
 
 # ── Fixtures ──
 
@@ -29,7 +34,10 @@ from signalops.storage.database import (
 @pytest.fixture
 def mock_gateway():
     gw = MagicMock()
-    gw.complete.return_value = "That sounds painful — 3 hours for one PR is brutal. Have you tried breaking reviews into smaller chunks?"
+    gw.complete.return_value = (
+        "That sounds painful \u2014 3 hours for one PR is brutal. "
+        "Have you tried breaking reviews into smaller chunks?"
+    )
     return gw
 
 
@@ -82,7 +90,10 @@ def sample_config():
 
 def test_generate_basic_draft(mock_gateway, persona, project_context):
     gen = LLMDraftGenerator(mock_gateway)
-    draft = gen.generate("PR reviews take forever", "@dev (500 followers)", project_context, persona)
+    draft = gen.generate(
+        "PR reviews take forever", "@dev (500 followers)",
+        project_context, persona,
+    )
     assert isinstance(draft, Draft)
     assert len(draft.text) <= 240
     assert draft.tone == "helpful"
@@ -160,7 +171,7 @@ def test_draft_stage_min_score_filter(db_session, sample_config):
     post = NormalizedPost(
         raw_post_id=1, project_id="test-project", platform="twitter",
         platform_id="t1", author_id="a1", text_original="test",
-        text_cleaned="test", created_at=datetime.now(timezone.utc),
+        text_cleaned="test", created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()
@@ -193,7 +204,7 @@ def test_draft_stage_top_n_limit(db_session, sample_config):
         post = NormalizedPost(
             raw_post_id=i + 1, project_id="test-project", platform="twitter",
             platform_id=f"t{i}", author_id=f"a{i}", text_original=f"test {i}",
-            text_cleaned=f"test {i}", created_at=datetime.now(timezone.utc),
+            text_cleaned=f"test {i}", created_at=datetime.now(UTC),
         )
         db_session.add(post)
         db_session.commit()
@@ -228,7 +239,7 @@ def test_draft_stage_skips_already_drafted(db_session, sample_config):
     post = NormalizedPost(
         raw_post_id=1, project_id="test-project", platform="twitter",
         platform_id="t1", author_id="a1", text_original="test",
-        text_cleaned="test", created_at=datetime.now(timezone.utc),
+        text_cleaned="test", created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()
@@ -263,7 +274,7 @@ def test_draft_stage_dry_run(db_session, sample_config):
     post = NormalizedPost(
         raw_post_id=1, project_id="test-project", platform="twitter",
         platform_id="t1", author_id="a1", text_original="test",
-        text_cleaned="test", created_at=datetime.now(timezone.utc),
+        text_cleaned="test", created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()

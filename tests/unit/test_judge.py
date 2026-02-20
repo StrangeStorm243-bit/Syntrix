@@ -1,11 +1,11 @@
 """Tests for the judge system: LLMPromptJudge, KeywordFallbackJudge, and JudgeStage."""
 
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 
-from signalops.config.schema import ProjectConfig, QueryConfig, RelevanceRubric, PersonaConfig
+from signalops.config.schema import PersonaConfig, ProjectConfig, QueryConfig, RelevanceRubric
 from signalops.models.judge_model import (
     Judgment,
     KeywordFallbackJudge,
@@ -14,10 +14,11 @@ from signalops.models.judge_model import (
 from signalops.pipeline.judge import JudgeStage
 from signalops.storage.database import (
     Judgment as JudgmentRow,
+)
+from signalops.storage.database import (
     JudgmentLabel,
     NormalizedPost,
 )
-
 
 # ── Fixtures ──
 
@@ -209,7 +210,7 @@ def test_judge_stage_skips_already_judged(db_session, sample_config):
         author_username="user1",
         text_original="test text",
         text_cleaned="test text",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()

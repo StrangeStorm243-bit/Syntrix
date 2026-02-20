@@ -1,12 +1,9 @@
 """Tests for the scoring engine."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
-import pytest
-
 from signalops.config.schema import (
-    ICPConfig,
     PersonaConfig,
     ProjectConfig,
     QueryConfig,
@@ -15,7 +12,6 @@ from signalops.config.schema import (
 )
 from signalops.pipeline.scorer import ScorerStage
 from signalops.storage.database import JudgmentLabel
-
 
 # ── Helpers ──
 
@@ -32,7 +28,7 @@ def make_post(**overrides):
         "retweets": 1,
         "views": 1000,
         "text_cleaned": "Looking for a code review tool?",
-        "created_at": datetime.now(timezone.utc) - timedelta(hours=1),
+        "created_at": datetime.now(UTC) - timedelta(hours=1),
     }
     defaults.update(overrides)
     post = MagicMock()
@@ -86,7 +82,7 @@ def test_perfect_score():
         retweets=10,
         views=20000,
         text_cleaned="Anyone recommend a code review tool? So frustrated with current one.",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     judgment = make_judgment("relevant", 0.95)
     config = make_config()
@@ -106,7 +102,7 @@ def test_zero_score():
         retweets=0,
         views=0,
         text_cleaned="Beautiful day today",
-        created_at=datetime.now(timezone.utc) - timedelta(days=7),
+        created_at=datetime.now(UTC) - timedelta(days=7),
     )
     judgment = make_judgment("irrelevant", 0.9)
     config = make_config()
@@ -165,28 +161,28 @@ def test_custom_weights():
 def test_recency_decay_recent():
     """1 hour ago -> recency > 90."""
     stage = ScorerStage(MagicMock())
-    score = stage._score_recency(datetime.now(timezone.utc) - timedelta(hours=1))
+    score = stage._score_recency(datetime.now(UTC) - timedelta(hours=1))
     assert score > 90
 
 
 def test_recency_decay_day_old():
     """24 hours ago -> recency around 40-60."""
     stage = ScorerStage(MagicMock())
-    score = stage._score_recency(datetime.now(timezone.utc) - timedelta(hours=24))
+    score = stage._score_recency(datetime.now(UTC) - timedelta(hours=24))
     assert 30 <= score <= 60
 
 
 def test_recency_decay_old():
     """72 hours ago -> recency < 15."""
     stage = ScorerStage(MagicMock())
-    score = stage._score_recency(datetime.now(timezone.utc) - timedelta(hours=72))
+    score = stage._score_recency(datetime.now(UTC) - timedelta(hours=72))
     assert score < 15
 
 
 def test_recency_decay_week_old():
     """168 hours ago -> recency = 0."""
     stage = ScorerStage(MagicMock())
-    score = stage._score_recency(datetime.now(timezone.utc) - timedelta(hours=168))
+    score = stage._score_recency(datetime.now(UTC) - timedelta(hours=168))
     assert score == 0.0
 
 
@@ -258,7 +254,7 @@ def test_score_range():
         for followers in [0, 100, 1_000_000]:
             post = make_post(
                 author_followers=followers,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             judgment = make_judgment(label, 0.8)
             total, _ = stage.compute_score(post, judgment, config)

@@ -22,14 +22,14 @@ def judge_cmd(ctx):
     session = get_session(engine)
 
     # Lazy imports for pipeline stages
-    from signalops.pipeline.judge import JudgeStage
+
     from signalops.models.judge_model import LLMPromptJudge
     from signalops.models.llm_gateway import LLMGateway
-
-    import os
+    from signalops.pipeline.judge import JudgeStage
 
     gateway = LLMGateway()
-    judge = LLMPromptJudge(gateway=gateway, model_id=config.llm.get("judge_model", "claude-sonnet-4-6"))
+    model_id = config.llm.get("judge_model", "claude-sonnet-4-6")
+    judge = LLMPromptJudge(gateway=gateway, model_id=model_id)
     judge_stage = JudgeStage(judge=judge, db_session=session)
 
     if dry_run:

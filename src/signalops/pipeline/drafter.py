@@ -8,9 +8,15 @@ from signalops.config.schema import ProjectConfig
 from signalops.models.draft_model import DraftGenerator
 from signalops.storage.database import (
     Draft as DraftRow,
+)
+from signalops.storage.database import (
     DraftStatus,
-    Judgment as JudgmentRow,
     NormalizedPost,
+)
+from signalops.storage.database import (
+    Judgment as JudgmentRow,
+)
+from signalops.storage.database import (
     Score as ScoreRow,
 )
 

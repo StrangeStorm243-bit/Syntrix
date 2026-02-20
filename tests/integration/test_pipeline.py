@@ -1,20 +1,15 @@
 """End-to-end pipeline integration tests with mocked external APIs."""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
+
+import pytest
 
 from signalops.connectors.base import Connector, RawPost
 from signalops.storage.database import (
-    Base,
     Draft,
     DraftStatus,
-    Judgment,
-    JudgmentLabel,
     NormalizedPost,
-    Project,
-    Score,
-    init_db,
 )
 
 
@@ -32,7 +27,7 @@ def mock_connector():
             author_followers=1000,
             author_verified=False,
             text="Looking for a good code review tool. Anyone recommend?",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             language="en",
             reply_to_id=None,
             conversation_id="123456",
@@ -49,7 +44,7 @@ def mock_connector():
             author_followers=5000,
             author_verified=True,
             text="Anyone know a tool that helps with automated PR reviews?",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
             language="en",
             reply_to_id=None,
             conversation_id="654321",
@@ -80,7 +75,7 @@ def test_sender_dry_run(db_session, sample_project_in_db, mock_connector, sample
         author_verified=False,
         text_original="Test tweet",
         text_cleaned="Test tweet",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         likes=5,
         retweets=1,
         replies=2,
@@ -95,7 +90,7 @@ def test_sender_dry_run(db_session, sample_project_in_db, mock_connector, sample
         text_generated="Great question! Check out our tool.",
         model_id="claude-sonnet-4-6",
         status=DraftStatus.APPROVED,
-        approved_at=datetime.now(timezone.utc),
+        approved_at=datetime.now(UTC),
     )
     db_session.add(draft)
     db_session.commit()
@@ -128,7 +123,9 @@ def test_sender_dry_run(db_session, sample_project_in_db, mock_connector, sample
     assert draft.status == DraftStatus.APPROVED
 
 
-def test_sender_rate_limit_check(db_session, sample_project_in_db, mock_connector, sample_project_config):
+def test_sender_rate_limit_check(
+    db_session, sample_project_in_db, mock_connector, sample_project_config,
+):
     """Test sender respects rate limits."""
     from signalops.pipeline.sender import SenderStage
 
@@ -142,8 +139,9 @@ def test_sender_rate_limit_check(db_session, sample_project_in_db, mock_connecto
 
 def test_orchestrator_instantiation(db_session, mock_connector):
     """Test that PipelineOrchestrator can be instantiated."""
-    from signalops.pipeline.orchestrator import PipelineOrchestrator
     from unittest.mock import MagicMock
+
+    from signalops.pipeline.orchestrator import PipelineOrchestrator
 
     judge = MagicMock()
     draft_gen = MagicMock()
@@ -161,9 +159,10 @@ def test_orchestrator_instantiation(db_session, mock_connector):
 
 def test_exporter_empty_db(db_session, sample_project_in_db):
     """Test exporter with no data returns empty results."""
-    from signalops.training.exporter import TrainingDataExporter
-    import tempfile
     import os
+    import tempfile
+
+    from signalops.training.exporter import TrainingDataExporter
 
     exporter = TrainingDataExporter(db_session=db_session)
 
@@ -201,7 +200,7 @@ def test_queue_approve_and_reject(db_session, sample_project_in_db):
         author_verified=False,
         text_original="Need help",
         text_cleaned="Need help",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.flush()
@@ -230,7 +229,7 @@ def test_queue_approve_and_reject(db_session, sample_project_in_db):
 
     # Approve draft1
     draft1.status = DraftStatus.APPROVED
-    draft1.approved_at = datetime.now(timezone.utc)
+    draft1.approved_at = datetime.now(UTC)
     db_session.commit()
 
     db_session.refresh(draft1)

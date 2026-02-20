@@ -1,6 +1,5 @@
 """Tests for the config system: schema validation, YAML loading, env var resolution."""
 
-import os
 from pathlib import Path
 
 import pytest
@@ -15,9 +14,7 @@ from signalops.config.schema import (
     QueryConfig,
     RelevanceRubric,
     ScoringWeights,
-    TemplateConfig,
 )
-
 
 PROJECTS_DIR = Path(__file__).parent.parent.parent / "projects"
 

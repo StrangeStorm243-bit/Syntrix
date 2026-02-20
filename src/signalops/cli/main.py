@@ -38,15 +38,15 @@ def cli(ctx, project, dry_run, verbose, output_format):
 
 
 # Register sub-groups and commands (lazy-imported modules define their groups)
-from signalops.cli.project import project_group  # noqa: E402
-from signalops.cli.collect import run_group  # noqa: E402
+import signalops.cli.draft  # noqa: E402, F401 — registers draft command on run_group
 import signalops.cli.judge  # noqa: E402, F401 — registers judge command on run_group
 import signalops.cli.score  # noqa: E402, F401 — registers score command on run_group
-import signalops.cli.draft  # noqa: E402, F401 — registers draft command on run_group
-from signalops.cli.approve import queue_group  # noqa: E402
 import signalops.cli.send  # noqa: E402, F401 — registers send command on queue_group
-from signalops.cli.stats import stats_cmd  # noqa: E402
+from signalops.cli.approve import queue_group  # noqa: E402
+from signalops.cli.collect import run_group  # noqa: E402
 from signalops.cli.export import export_group  # noqa: E402
+from signalops.cli.project import project_group  # noqa: E402
+from signalops.cli.stats import stats_cmd  # noqa: E402
 
 cli.add_command(project_group, "project")
 cli.add_command(run_group, "run")

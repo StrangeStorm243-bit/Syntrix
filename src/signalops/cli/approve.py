@@ -1,5 +1,7 @@
 """Draft approval queue CLI commands."""
 
+from datetime import UTC
+
 import click
 
 from signalops.cli.project import get_active_project
@@ -14,6 +16,8 @@ def queue_group():
 @click.pass_context
 def queue_list(ctx):
     """Show pending drafts."""
+    from rich.table import Table
+
     from signalops.config.defaults import DEFAULT_DB_URL
     from signalops.storage.database import (
         Draft,
@@ -24,7 +28,6 @@ def queue_list(ctx):
         get_session,
         init_db,
     )
-    from rich.table import Table
 
     console = ctx.obj["console"]
     project_id = get_active_project(ctx)
@@ -57,7 +60,11 @@ def queue_list(ctx):
 
     for draft, post, score in drafts:
         score_val = f"{score.total_score:.0f}" if score else "—"
-        text_preview = (draft.text_generated[:57] + "...") if len(draft.text_generated) > 60 else draft.text_generated
+        text_preview = (
+            (draft.text_generated[:57] + "...")
+            if len(draft.text_generated) > 60
+            else draft.text_generated
+        )
         status_color = {
             DraftStatus.PENDING: "yellow",
             DraftStatus.APPROVED: "green",
@@ -80,7 +87,7 @@ def queue_list(ctx):
 @click.pass_context
 def queue_approve(ctx, draft_id):
     """Approve a draft for sending."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from signalops.config.defaults import DEFAULT_DB_URL
     from signalops.storage.audit import log_action
@@ -98,7 +105,7 @@ def queue_approve(ctx, draft_id):
         raise click.UsageError(f"Draft #{draft_id} not found in project {project_id}")
 
     draft.status = DraftStatus.APPROVED
-    draft.approved_at = datetime.now(timezone.utc)
+    draft.approved_at = datetime.now(UTC)
     session.commit()
 
     log_action(session, project_id, "approve_draft", "draft", draft_id)
@@ -111,7 +118,7 @@ def queue_approve(ctx, draft_id):
 @click.pass_context
 def queue_edit(ctx, draft_id):
     """Edit a draft then approve it."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from rich.prompt import Prompt
 
@@ -139,7 +146,7 @@ def queue_edit(ctx, draft_id):
         draft.text_final = draft.text_generated
 
     draft.status = DraftStatus.EDITED
-    draft.approved_at = datetime.now(timezone.utc)
+    draft.approved_at = datetime.now(UTC)
     session.commit()
 
     log_action(

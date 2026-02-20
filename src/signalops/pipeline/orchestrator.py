@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from signalops.config.schema import ProjectConfig
-    from signalops.connectors.base import Connector
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -148,7 +148,7 @@ class XConnector(Connector):
         try:
             created_at = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
-            created_at = datetime.now(timezone.utc)
+            created_at = datetime.now(UTC)
 
         metrics = tweet.get("public_metrics", {})
         entities = tweet.get("entities", {})

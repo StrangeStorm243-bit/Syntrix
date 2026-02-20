@@ -107,7 +107,8 @@ class LLMGateway:
         for attempt in range(3):
             if self._circuit_breaker.is_open():
                 raise RuntimeError(
-                    f"Circuit breaker is open after repeated failures (state={self._circuit_breaker.state})"
+                    f"Circuit breaker is open after repeated failures "
+                    f"(state={self._circuit_breaker.state})"
                 )
             try:
                 result = provider.complete(system_prompt, user_prompt, **kwargs)
@@ -141,7 +142,8 @@ class LLMGateway:
         for attempt in range(3):
             if self._circuit_breaker.is_open():
                 raise RuntimeError(
-                    f"Circuit breaker is open after repeated failures (state={self._circuit_breaker.state})"
+                    f"Circuit breaker is open after repeated failures "
+                    f"(state={self._circuit_breaker.state})"
                 )
             try:
                 result = provider.complete_json(system_prompt, user_prompt, **kwargs)

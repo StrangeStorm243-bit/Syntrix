@@ -1,6 +1,6 @@
 """Integration tests for the collector stage with mocked connectors."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -27,7 +27,7 @@ def _make_raw_post(platform_id: str, text: str = "Test tweet") -> RawPost:
         author_followers=1000,
         author_verified=False,
         text=text,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         language="en",
         reply_to_id=None,
         conversation_id=platform_id,

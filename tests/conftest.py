@@ -10,7 +10,7 @@ from signalops.config.schema import (
     QueryConfig,
     RelevanceRubric,
 )
-from signalops.storage.database import Base, init_db
+from signalops.storage.database import init_db
 
 
 @pytest.fixture

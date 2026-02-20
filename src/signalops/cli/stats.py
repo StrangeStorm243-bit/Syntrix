@@ -2,7 +2,6 @@
 
 import click
 from rich.panel import Panel
-from rich.table import Table
 
 from signalops.cli.project import get_active_project
 
@@ -19,7 +18,6 @@ def stats_cmd(ctx):
         JudgmentLabel,
         NormalizedPost,
         Outcome,
-        OutcomeType,
         RawPost,
         Score,
         get_engine,

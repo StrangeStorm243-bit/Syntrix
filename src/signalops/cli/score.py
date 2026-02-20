@@ -62,7 +62,11 @@ def score_cmd(ctx):
         table.add_column("Tweet", max_width=50)
 
         for i, (score, post) in enumerate(top_scores, 1):
-            text_preview = (post.text_cleaned[:47] + "...") if len(post.text_cleaned) > 50 else post.text_cleaned
+            text_preview = (
+                (post.text_cleaned[:47] + "...")
+                if len(post.text_cleaned) > 50
+                else post.text_cleaned
+            )
             table.add_row(
                 str(i),
                 f"{score.total_score:.1f}",

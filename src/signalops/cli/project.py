@@ -1,6 +1,5 @@
 """Project management CLI commands."""
 
-from pathlib import Path
 
 import click
 from rich.table import Table

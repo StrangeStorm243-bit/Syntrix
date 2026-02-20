@@ -2,7 +2,7 @@
 
 import click
 
-from signalops.cli.project import get_active_project, load_active_config
+from signalops.cli.project import get_active_project
 
 
 @click.group("export")

@@ -3,6 +3,7 @@
 import enum
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     DateTime,
@@ -17,7 +18,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import JSON
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 

@@ -133,7 +133,6 @@ def test_verbose_flag(runner):
 
 def test_project_list_no_projects(runner, tmp_path, monkeypatch):
     """Test project list with no projects directory."""
-    import signalops.cli.project as proj_mod
 
     monkeypatch.setattr(
         "signalops.config.defaults.DEFAULT_PROJECTS_DIR", tmp_path / "nonexistent"
@@ -195,7 +194,6 @@ def test_project_set_and_list(runner, tmp_path, monkeypatch):
 
 def test_stats_with_db(runner, tmp_path, monkeypatch, db_session, sample_project_in_db):
     """Test stats command with an initialized DB."""
-    from signalops.storage.database import get_engine, get_session
 
     # Monkeypatch to use our in-memory DB
     monkeypatch.setattr(

@@ -1,6 +1,6 @@
 """Pydantic models for project configuration (project.yaml)."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class QueryConfig(BaseModel):
