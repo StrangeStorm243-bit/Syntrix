@@ -31,5 +31,8 @@ Thumbs.db
 # Database
 *.db
 
+# Claude Code
+.claude/
+
 # Credentials
 .signalops/
