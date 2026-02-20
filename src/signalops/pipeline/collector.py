@@ -137,6 +137,106 @@ class CollectorStage:
             "per_query": per_query,
         }
 
+    def run_stream(
+        self,
+        config: ProjectConfig,
+        stream_connector: Any,
+        duration_seconds: int = 300,
+    ) -> dict[str, Any]:
+        """Collect tweets via Filtered Stream (real-time mode).
+
+        An alternative to run() that uses the Filtered Stream endpoint.
+        Stores incoming posts with the same dedup logic as search mode.
+
+        Args:
+            config: Project configuration.
+            stream_connector: A StreamConnector instance.
+            duration_seconds: How long to stream before stopping.
+
+        Returns:
+            Summary dict with total_new, total_skipped counts.
+        """
+        import threading
+
+        total_new = 0
+        total_skipped = 0
+
+        def _on_post(post: ConnectorPost) -> None:
+            nonlocal total_new, total_skipped
+
+            # Dedup via cache
+            if self._cache is not None and is_duplicate(
+                self._cache, post.platform, post.platform_id, config.project_id
+            ):
+                total_skipped += 1
+                return
+
+            raw_post = RawPost(
+                project_id=config.project_id,
+                platform=post.platform,
+                platform_id=post.platform_id,
+                query_used="stream",
+                raw_json=post.raw_json,
+            )
+
+            try:
+                self.db.add(raw_post)
+                self.db.flush()
+                self.db.commit()
+                total_new += 1
+                if self._cache is not None:
+                    mark_seen(
+                        self._cache,
+                        post.platform,
+                        post.platform_id,
+                        config.project_id,
+                    )
+            except IntegrityError:
+                self.db.rollback()
+                total_skipped += 1
+
+        # Add rules from config
+        if config.stream.rules:
+            stream_connector.add_rules(config.stream.rules)
+
+        # Run stream in a background thread with a timeout
+        stream_thread = threading.Thread(
+            target=stream_connector.stream,
+            kwargs={
+                "callback": _on_post,
+                "backfill_minutes": config.stream.backfill_minutes,
+                "max_reconnects": 1,
+            },
+            daemon=True,
+        )
+        stream_thread.start()
+        stream_thread.join(timeout=duration_seconds)
+
+        if not total_new and not total_skipped:
+            log_action(
+                self.db,
+                project_id=config.project_id,
+                action="collect_stream",
+                details={"duration_seconds": duration_seconds, "note": "no posts received"},
+            )
+        else:
+            log_action(
+                self.db,
+                project_id=config.project_id,
+                action="collect_stream",
+                details={
+                    "new_count": total_new,
+                    "skipped_count": total_skipped,
+                    "duration_seconds": duration_seconds,
+                },
+            )
+
+        return {
+            "total_new": total_new,
+            "total_skipped": total_skipped,
+            "mode": "stream",
+        }
+
     def _get_since_id(self, project_id: str, query_text: str) -> str | None:
         """Get the most recent platform_id for incremental collection."""
         result = (
