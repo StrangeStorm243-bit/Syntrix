@@ -13,6 +13,7 @@ from signalops.config.schema import (
 )
 from signalops.connectors.base import Connector, RawPost
 from signalops.pipeline.collector import CollectorStage
+from signalops.storage.cache import InMemoryCache
 from signalops.storage.database import AuditLog, Project
 from signalops.storage.database import RawPost as RawPostDB
 
@@ -161,3 +162,60 @@ def test_audit_log(db_session, mock_connector, setup_project):
     collector.run(config=config)
     logs = db_session.query(AuditLog).filter_by(action="collect").all()
     assert len(logs) >= 1
+
+
+# ── Cache integration tests ──
+
+
+def test_search_cache_hit_skips_connector(db_session, mock_connector, setup_project):
+    """When search results are cached, the connector.search() should not be called."""
+    cache = InMemoryCache()
+    config = _make_config()
+    collector = CollectorStage(connector=mock_connector, db_session=db_session, cache=cache)
+    # First run populates the search cache
+    result1 = collector.run(config=config)
+    assert result1["total_new"] == 3
+    assert mock_connector.search.call_count == 1
+
+    # Reset DB and dedup cache so second run can re-insert
+    db_session.query(RawPostDB).delete()
+    db_session.commit()
+    for key in list(cache._store.keys()):
+        if key.startswith("dedup:"):
+            cache.delete(key)
+
+    # Second run should hit search cache, not connector
+    result2 = collector.run(config=config)
+    # Connector was only called once total (first run)
+    assert mock_connector.search.call_count == 1
+    assert result2["total_new"] == 3
+
+
+def test_dedup_cache_skips_db_insert(db_session, mock_connector, setup_project):
+    """When dedup cache says a post is seen, we skip the DB insert entirely."""
+    cache = InMemoryCache()
+    config = _make_config()
+    collector = CollectorStage(connector=mock_connector, db_session=db_session, cache=cache)
+    # First run: inserts 3 posts and marks them in cache
+    result1 = collector.run(config=config)
+    assert result1["total_new"] == 3
+
+    # Expire the search cache so connector is called again
+    for key in list(cache._store.keys()):
+        if key.startswith("search:"):
+            cache.delete(key)
+
+    # Second run: dedup cache catches all 3 as duplicates
+    result2 = collector.run(config=config)
+    assert result2["total_skipped"] == 3
+    assert result2["total_new"] == 0
+
+
+def test_no_cache_falls_back_to_db_dedup(db_session, mock_connector, setup_project):
+    """Without cache, deduplication still works via DB IntegrityError."""
+    config = _make_config()
+    collector = CollectorStage(connector=mock_connector, db_session=db_session, cache=None)
+    result1 = collector.run(config=config)
+    assert result1["total_new"] == 3
+    result2 = collector.run(config=config)
+    assert result2["total_skipped"] == 3
