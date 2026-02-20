@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from signalops.connectors.base import Connector
     from signalops.models.draft_model import DraftGenerator
     from signalops.models.judge_model import RelevanceJudge
+    from signalops.notifications.base import Notifier
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +26,13 @@ class PipelineOrchestrator:
         connector: Connector,
         judge: RelevanceJudge,
         draft_generator: DraftGenerator,
+        notifiers: list[Notifier] | None = None,
     ) -> None:
         self.session = db_session
         self.connector = connector
         self.judge = judge
         self.draft_generator = draft_generator
+        self.notifiers = notifiers or []
 
     def run_all(self, config: ProjectConfig, dry_run: bool = False) -> dict[str, Any]:
         """Execute the full pipeline in sequence."""
@@ -41,6 +44,7 @@ class PipelineOrchestrator:
             ("Normalizing posts", self._run_normalize),
             ("Judging relevance", self._run_judge),
             ("Scoring leads", self._run_score),
+            ("Sending notifications", self._run_notify),
             ("Generating drafts", self._run_draft),
         ]
 
@@ -92,6 +96,36 @@ class PipelineOrchestrator:
             config=config,
             dry_run=dry_run,
         )
+
+    def _run_notify(self, config: ProjectConfig, dry_run: bool) -> dict[str, Any]:
+        """Send notifications for high-score leads. Never fails the pipeline."""
+        if not self.notifiers or not config.notifications.enabled:
+            return {"skipped": True, "reason": "notifications disabled"}
+        try:
+            from signalops.notifications.base import notify_high_scores
+            from signalops.storage.database import Score
+
+            threshold = config.notifications.min_score_to_notify
+            rows = (
+                self.session.query(Score)
+                .filter(
+                    Score.project_id == config.project_id,
+                    Score.total_score >= threshold,
+                )
+                .all()
+            )
+            scores = [
+                {
+                    "author": "unknown",
+                    "score": row.total_score,
+                    "text_preview": "",
+                }
+                for row in rows
+            ]
+            return notify_high_scores(scores, config, self.notifiers)
+        except Exception as e:
+            logger.warning("Notification failed (non-fatal): %s", e)
+            return {"error": str(e)}
 
     def _run_draft(self, config: ProjectConfig, dry_run: bool) -> dict[str, Any]:
         from signalops.pipeline.drafter import DrafterStage
