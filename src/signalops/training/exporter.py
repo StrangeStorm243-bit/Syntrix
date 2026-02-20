@@ -1,6 +1,9 @@
 """Training data exporter for fine-tuning LLM judges and draft generators."""
 
+from __future__ import annotations
+
 import json
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -16,7 +19,7 @@ class TrainingDataExporter:
         project_id: str,
         format: str = "openai",
         output: str = "judgments.jsonl",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Export human-corrected judgments as fine-tuning data."""
         from signalops.storage.database import Judgment, NormalizedPost, Project
 
@@ -31,11 +34,7 @@ class TrainingDataExporter:
 
         records = []
         for j in judgments:
-            post = (
-                self.db.query(NormalizedPost)
-                .filter_by(id=j.normalized_post_id)
-                .first()
-            )
+            post = self.db.query(NormalizedPost).filter_by(id=j.normalized_post_id).first()
             project = self.db.query(Project).get(project_id)
 
             record = {
@@ -78,7 +77,7 @@ class TrainingDataExporter:
         self,
         project_id: str,
         output: str = "preferences.jsonl",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Export draft edits as DPO preference pairs."""
         from signalops.storage.database import Draft, DraftStatus, NormalizedPost
 
@@ -94,11 +93,7 @@ class TrainingDataExporter:
 
         records = []
         for d in drafts:
-            post = (
-                self.db.query(NormalizedPost)
-                .filter_by(id=d.normalized_post_id)
-                .first()
-            )
+            post = self.db.query(NormalizedPost).filter_by(id=d.normalized_post_id).first()
             record = {
                 "prompt": f"Write a reply to: '{post.text_cleaned if post else ''}'",
                 "chosen": d.text_final,

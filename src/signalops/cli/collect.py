@@ -1,16 +1,18 @@
 """Pipeline run commands — collect, judge, score, draft, all."""
 
+from __future__ import annotations
+
 import click
 
 
 @click.group("run")
-def run_group():
+def run_group() -> None:
     """Run pipeline stages."""
 
 
 @run_group.command("collect")
 @click.pass_context
-def collect_cmd(ctx):
+def collect_cmd(ctx: click.Context) -> None:
     """Collect tweets matching project queries."""
     from signalops.cli.project import load_active_config
     from signalops.config.defaults import DEFAULT_DB_URL
@@ -52,7 +54,7 @@ def collect_cmd(ctx):
 
 @run_group.command("all")
 @click.pass_context
-def run_all_cmd(ctx):
+def run_all_cmd(ctx: click.Context) -> None:
     """Run full pipeline: collect -> normalize -> judge -> score -> draft."""
     from signalops.cli.project import load_active_config
     from signalops.config.defaults import DEFAULT_DB_URL
@@ -86,11 +88,11 @@ def run_all_cmd(ctx):
     gateway = LLMGateway()
     judge = LLMPromptJudge(
         gateway=gateway,
-        model_id=config.llm.get("judge_model", "claude-sonnet-4-6"),
+        model=config.llm.get("judge_model", "claude-sonnet-4-6"),
     )
     draft_generator = LLMDraftGenerator(
         gateway=gateway,
-        model_id=config.llm.get("draft_model", "claude-sonnet-4-6"),
+        model=config.llm.get("draft_model", "claude-sonnet-4-6"),
     )
 
     orchestrator = PipelineOrchestrator(

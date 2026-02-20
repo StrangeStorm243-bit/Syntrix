@@ -1,7 +1,10 @@
 """Abstract base class for LLM providers."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -36,8 +39,8 @@ class LLMProvider(ABC):
         self,
         system_prompt: str,
         user_prompt: str,
-        response_schema: dict | None = None,
-    ) -> dict:
+        response_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Returns parsed JSON from LLM. Handles parsing errors."""
 
     @property

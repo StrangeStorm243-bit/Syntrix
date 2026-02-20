@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 
 class TFIDFFallbackClassifier:
     """Offline TF-IDF + LogisticRegression classifier as fallback."""
 
-    def __init__(self):
-        self.vectorizer = None
-        self.classifier = None
+    def __init__(self) -> None:
+        self.vectorizer: Any = None
+        self.classifier: Any = None
         self.is_trained = False
 
-    def train(self, texts: list[str], labels: list[str]) -> dict:
+    def train(self, texts: list[str], labels: list[str]) -> dict[str, Any]:
         """Train from labeled examples. Returns training metrics."""
         try:
             from sklearn.feature_extraction.text import TfidfVectorizer
@@ -42,7 +44,7 @@ class TFIDFFallbackClassifier:
 
     def predict(self, text: str) -> tuple[str, float]:
         """Returns (label, confidence)."""
-        if not self.is_trained:
+        if not self.is_trained or self.vectorizer is None or self.classifier is None:
             raise RuntimeError("Classifier not trained — call train() first")
 
         features = self.vectorizer.transform([text])
@@ -57,22 +59,16 @@ class TFIDFFallbackClassifier:
         try:
             import joblib
         except ImportError:
-            raise ImportError(
-                "joblib is required. Install it with: pip install joblib"
-            )
+            raise ImportError("joblib is required. Install it with: pip install joblib")
 
-        joblib.dump(
-            {"vectorizer": self.vectorizer, "classifier": self.classifier}, path
-        )
+        joblib.dump({"vectorizer": self.vectorizer, "classifier": self.classifier}, path)
 
     def load(self, path: str) -> None:
         """Load serialized model."""
         try:
             import joblib
         except ImportError:
-            raise ImportError(
-                "joblib is required. Install it with: pip install joblib"
-            )
+            raise ImportError("joblib is required. Install it with: pip install joblib")
 
         data = joblib.load(path)
         self.vectorizer = data["vectorizer"]

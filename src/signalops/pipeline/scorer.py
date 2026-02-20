@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -26,9 +27,7 @@ class ScorerStage:
     def __init__(self, db_session: Session):
         self._session = db_session
 
-    def run(
-        self, project_id: str, config: ProjectConfig, dry_run: bool = False
-    ) -> dict:
+    def run(self, project_id: str, config: ProjectConfig, dry_run: bool = False) -> dict[str, Any]:
         # Find relevant/maybe posts without scores
         already_scored_ids = (
             self._session.query(ScoreRow.normalized_post_id)
@@ -93,15 +92,15 @@ class ScorerStage:
         post: NormalizedPost,
         judgment: JudgmentRow,
         config: ProjectConfig,
-    ) -> tuple[float, dict]:
+    ) -> tuple[float, dict[str, Any]]:
         """Returns (total_score, components_dict). Total is 0-100."""
         weights = config.scoring
 
         relevance_score = self._score_relevance(judgment)
         authority_score = self._score_authority(post, config.icp)
         engagement_score = self._score_engagement(post)
-        recency_score = self._score_recency(post.created_at)
-        intent_score = self._score_intent(post.text_cleaned or "")
+        recency_score = self._score_recency(post.created_at)  # type: ignore[arg-type]
+        intent_score = self._score_intent(str(post.text_cleaned or ""))
 
         components = {
             "relevance_judgment": relevance_score,
@@ -123,17 +122,18 @@ class ScorerStage:
 
     def _score_relevance(self, judgment: JudgmentRow) -> float:
         """confidence * label_multiplier."""
-        multiplier = {
+        multiplier: dict[JudgmentLabel, float] = {
             JudgmentLabel.RELEVANT: 1.0,
             JudgmentLabel.MAYBE: 0.3,
             JudgmentLabel.IRRELEVANT: 0.0,
         }
-        return judgment.confidence * multiplier.get(judgment.label, 0) * 100
+        label = JudgmentLabel(judgment.label)
+        return float(judgment.confidence) * multiplier.get(label, 0.0) * 100
 
     def _score_authority(self, post: NormalizedPost, icp: ICPConfig) -> float:
         """Normalized score from followers, verified, bio match."""
         score = 0.0
-        followers = post.author_followers or 0
+        followers = int(post.author_followers or 0)
         if followers > 0:
             score += min(math.log10(followers) / 6 * 60, 60)
         if post.author_verified:
@@ -145,10 +145,10 @@ class ScorerStage:
     def _score_engagement(self, post: NormalizedPost) -> float:
         """Normalized from likes, replies, retweets, views."""
         score = 0.0
-        score += min((post.likes or 0) * 3, 30)
-        score += min((post.replies or 0) * 5, 30)
-        score += min((post.retweets or 0) * 4, 20)
-        score += min((post.views or 0) / 500, 20)
+        score += min(int(post.likes or 0) * 3, 30)
+        score += min(int(post.replies or 0) * 5, 30)
+        score += min(int(post.retweets or 0) * 4, 20)
+        score += min(int(post.views or 0) / 500, 20)
         return min(score, 100)
 
     def _score_recency(self, created_at: datetime | None) -> float:

@@ -48,9 +48,7 @@ def _make_config(project_id="test-project", queries=None):
         relevance=RelevanceRubric(
             system_prompt="test", positive_signals=["a"], negative_signals=["b"]
         ),
-        persona=PersonaConfig(
-            name="Bot", role="t", tone="t", voice_notes="t", example_reply="t"
-        ),
+        persona=PersonaConfig(name="Bot", role="t", tone="t", voice_notes="t", example_reply="t"),
     )
 
 

@@ -1,12 +1,14 @@
 """Export commands for training data."""
 
+from __future__ import annotations
+
 import click
 
 from signalops.cli.project import get_active_project
 
 
 @click.group("export")
-def export_group():
+def export_group() -> None:
     """Export data for fine-tuning or analysis."""
 
 
@@ -15,7 +17,9 @@ def export_group():
 @click.option("--format", "data_format", type=click.Choice(["openai", "dpo"]), default="openai")
 @click.option("--output", default=None, help="Output file path")
 @click.pass_context
-def export_training_data(ctx, data_type, data_format, output):
+def export_training_data(
+    ctx: click.Context, data_type: str, data_format: str, output: str | None
+) -> None:
     """Export training data as JSONL for fine-tuning."""
     from signalops.config.defaults import DEFAULT_DB_URL
     from signalops.storage.database import get_engine, get_session, init_db
@@ -53,7 +57,5 @@ def export_training_data(ctx, data_type, data_format, output):
             output=default_output,
         )
 
-    console.print(
-        f"[green]Exported {result['records']} records to {result['output']}"
-    )
+    console.print(f"[green]Exported {result['records']} records to {result['output']}")
     session.close()

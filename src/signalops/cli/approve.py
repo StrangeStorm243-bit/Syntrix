@@ -1,5 +1,7 @@
 """Draft approval queue CLI commands."""
 
+from __future__ import annotations
+
 from datetime import UTC
 
 import click
@@ -8,13 +10,13 @@ from signalops.cli.project import get_active_project
 
 
 @click.group("queue")
-def queue_group():
+def queue_group() -> None:
     """Manage the draft approval queue."""
 
 
 @queue_group.command("list")
 @click.pass_context
-def queue_list(ctx):
+def queue_list(ctx: click.Context) -> None:
     """Show pending drafts."""
     from rich.table import Table
 
@@ -85,7 +87,7 @@ def queue_list(ctx):
 @queue_group.command("approve")
 @click.argument("draft_id", type=int)
 @click.pass_context
-def queue_approve(ctx, draft_id):
+def queue_approve(ctx: click.Context, draft_id: int) -> None:
     """Approve a draft for sending."""
     from datetime import datetime
 
@@ -104,8 +106,8 @@ def queue_approve(ctx, draft_id):
     if not draft:
         raise click.UsageError(f"Draft #{draft_id} not found in project {project_id}")
 
-    draft.status = DraftStatus.APPROVED
-    draft.approved_at = datetime.now(UTC)
+    draft.status = DraftStatus.APPROVED  # type: ignore[assignment]
+    draft.approved_at = datetime.now(UTC)  # type: ignore[assignment]
     session.commit()
 
     log_action(session, project_id, "approve_draft", "draft", draft_id)
@@ -116,7 +118,7 @@ def queue_approve(ctx, draft_id):
 @queue_group.command("edit")
 @click.argument("draft_id", type=int)
 @click.pass_context
-def queue_edit(ctx, draft_id):
+def queue_edit(ctx: click.Context, draft_id: int) -> None:
     """Edit a draft then approve it."""
     from datetime import datetime
 
@@ -141,16 +143,20 @@ def queue_edit(ctx, draft_id):
     new_text = Prompt.ask("New text (or press Enter to keep)")
 
     if new_text:
-        draft.text_final = new_text
+        draft.text_final = new_text  # type: ignore[assignment]
     else:
         draft.text_final = draft.text_generated
 
-    draft.status = DraftStatus.EDITED
-    draft.approved_at = datetime.now(UTC)
+    draft.status = DraftStatus.EDITED  # type: ignore[assignment]
+    draft.approved_at = datetime.now(UTC)  # type: ignore[assignment]
     session.commit()
 
     log_action(
-        session, project_id, "edit_draft", "draft", draft_id,
+        session,
+        project_id,
+        "edit_draft",
+        "draft",
+        draft_id,
         details={"new_text": draft.text_final},
     )
     console.print(f"[green]Draft #{draft_id} edited and approved.")
@@ -161,7 +167,7 @@ def queue_edit(ctx, draft_id):
 @click.argument("draft_id", type=int)
 @click.option("--reason", default=None, help="Rejection reason")
 @click.pass_context
-def queue_reject(ctx, draft_id, reason):
+def queue_reject(ctx: click.Context, draft_id: int, reason: str | None) -> None:
     """Reject a draft."""
     from signalops.config.defaults import DEFAULT_DB_URL
     from signalops.storage.audit import log_action
@@ -178,11 +184,15 @@ def queue_reject(ctx, draft_id, reason):
     if not draft:
         raise click.UsageError(f"Draft #{draft_id} not found in project {project_id}")
 
-    draft.status = DraftStatus.REJECTED
+    draft.status = DraftStatus.REJECTED  # type: ignore[assignment]
     session.commit()
 
     log_action(
-        session, project_id, "reject_draft", "draft", draft_id,
+        session,
+        project_id,
+        "reject_draft",
+        "draft",
+        draft_id,
         details={"reason": reason} if reason else None,
     )
     console.print(f"[yellow]Draft #{draft_id} rejected." + (f" Reason: {reason}" if reason else ""))

@@ -1,5 +1,9 @@
 """Pydantic models for project configuration (project.yaml)."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -85,5 +89,5 @@ class ProjectConfig(BaseModel):
     persona: PersonaConfig
     templates: list[TemplateConfig] = []
     notifications: NotificationConfig = NotificationConfig()
-    rate_limits: dict = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
-    llm: dict = {"judge_model": "claude-sonnet-4-6", "draft_model": "claude-sonnet-4-6"}
+    rate_limits: dict[str, Any] = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
+    llm: dict[str, Any] = {"judge_model": "claude-sonnet-4-6", "draft_model": "claude-sonnet-4-6"}

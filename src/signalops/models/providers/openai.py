@@ -1,6 +1,9 @@
 """OpenAI provider implementation."""
 
+from __future__ import annotations
+
 import json
+from typing import Any
 
 from signalops.models.providers.base import LLMProvider, ProviderConfig
 
@@ -15,9 +18,7 @@ class OpenAIProvider(LLMProvider):
         self.config = config
         import openai
 
-        self._client = openai.OpenAI(
-            api_key=config.api_key, timeout=config.timeout
-        )
+        self._client = openai.OpenAI(api_key=config.api_key, timeout=config.timeout)
 
     def complete(
         self,
@@ -35,14 +36,15 @@ class OpenAIProvider(LLMProvider):
             temperature=temperature if temperature is not None else self.config.temperature,
             max_tokens=max_tokens or self.config.max_tokens,
         )
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        return content or ""
 
     def complete_json(
         self,
         system_prompt: str,
         user_prompt: str,
-        response_schema: dict | None = None,
-    ) -> dict:
+        response_schema: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         response = self._client.chat.completions.create(
             model=self.config.model,
             messages=[
@@ -53,8 +55,9 @@ class OpenAIProvider(LLMProvider):
             max_tokens=self.config.max_tokens,
             response_format={"type": "json_object"},
         )
-        raw = response.choices[0].message.content
-        return json.loads(raw)
+        raw = response.choices[0].message.content or ""
+        result: dict[str, Any] = json.loads(raw)
+        return result
 
     @property
     def model_id(self) -> str:

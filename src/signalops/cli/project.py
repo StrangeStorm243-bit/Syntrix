@@ -1,21 +1,25 @@
 """Project management CLI commands."""
 
+from __future__ import annotations
+
+from typing import Any
 
 import click
 from rich.table import Table
 
 from signalops.config.defaults import DEFAULT_CREDENTIALS_DIR, DEFAULT_PROJECTS_DIR
+from signalops.config.schema import ProjectConfig
 
 
 @click.group("project")
-def project_group():
+def project_group() -> None:
     """Manage projects."""
 
 
 @project_group.command("set")
 @click.argument("name")
 @click.pass_context
-def project_set(ctx, name):
+def project_set(ctx: click.Context, name: str) -> None:
     """Set the active project."""
     from signalops.config.loader import load_project
 
@@ -32,14 +36,12 @@ def project_set(ctx, name):
     active_file.write_text(name)
 
     console = ctx.obj["console"]
-    console.print(
-        f"[green]Active project: {name} ({len(config.queries)} queries configured)"
-    )
+    console.print(f"[green]Active project: {name} ({len(config.queries)} queries configured)")
 
 
 @project_group.command("list")
 @click.pass_context
-def project_list(ctx):
+def project_list(ctx: click.Context) -> None:
     """List all available projects."""
     from signalops.config.loader import load_project
 
@@ -81,7 +83,7 @@ def project_list(ctx):
 
 @project_group.command("init")
 @click.pass_context
-def project_init(ctx):
+def project_init(ctx: click.Context) -> None:
     """Create a new project interactively."""
     from rich.prompt import Prompt
 
@@ -95,7 +97,7 @@ def project_init(ctx):
     product_url = Prompt.ask("Product URL (optional)", default="")
 
     # Queries
-    queries = []
+    queries: list[dict[str, Any]] = []
     console.print("\n[bold]Search Queries[/bold] (enter empty text to stop)")
     while True:
         text = Prompt.ask("  Query text (X API syntax)", default="")
@@ -168,17 +170,17 @@ def project_init(ctx):
     console.print(f"Run: signalops project set {project_id}")
 
 
-def get_active_project(ctx) -> str:
+def get_active_project(ctx: click.Context) -> str:
     """Get the active project name from ctx override or ~/.signalops/active_project."""
     if ctx.obj.get("project"):
-        return ctx.obj["project"]
+        return str(ctx.obj["project"])
     active_file = DEFAULT_CREDENTIALS_DIR / "active_project"
     if active_file.exists():
         return active_file.read_text().strip()
     raise click.UsageError("No active project. Run: signalops project set <name>")
 
 
-def load_active_config(ctx):
+def load_active_config(ctx: click.Context) -> ProjectConfig:
     """Load the active project's config."""
     from signalops.config.loader import load_project
 

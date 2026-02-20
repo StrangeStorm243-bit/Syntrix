@@ -1,5 +1,7 @@
 """Send approved drafts as replies."""
 
+from __future__ import annotations
+
 import click
 
 from signalops.cli.approve import queue_group
@@ -9,7 +11,7 @@ from signalops.cli.project import load_active_config
 @queue_group.command("send")
 @click.option("--confirm", is_flag=True, default=False, help="Actually send (default is preview)")
 @click.pass_context
-def queue_send(ctx, confirm):
+def queue_send(ctx: click.Context, confirm: bool) -> None:
     """Send approved drafts as replies."""
     from signalops.config.defaults import DEFAULT_DB_URL
     from signalops.storage.database import get_engine, get_session, init_db

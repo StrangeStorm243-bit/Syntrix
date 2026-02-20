@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from signalops.config.schema import ProjectConfig
@@ -35,7 +37,7 @@ class DrafterStage:
         top_n: int = 10,
         min_score: float = 50.0,
         dry_run: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         # Find top-scored posts without drafts
         already_drafted_ids = (
             self._session.query(DraftRow.normalized_post_id)
@@ -73,8 +75,7 @@ class DrafterStage:
 
         for post, score_row, judgment_row in rows:
             author_context = (
-                f"@{post.author_username or 'unknown'} "
-                f"({post.author_followers or 0} followers)"
+                f"@{post.author_username or 'unknown'} ({post.author_followers or 0} followers)"
             )
             project_context = {
                 "project_name": config.project_name,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from signalops.config.schema import ProjectConfig
@@ -22,9 +24,7 @@ class JudgeStage:
         self._judge = judge
         self._session = db_session
 
-    def run(
-        self, project_id: str, config: ProjectConfig, dry_run: bool = False
-    ) -> dict:
+    def run(self, project_id: str, config: ProjectConfig, dry_run: bool = False) -> dict[str, Any]:
         # Find posts without judgments
         already_judged_ids = (
             self._session.query(JudgmentRow.normalized_post_id)
@@ -53,7 +53,7 @@ class JudgeStage:
         total_confidence = 0.0
 
         for post in posts:
-            text_cleaned = post.text_cleaned or ""
+            text_cleaned = str(post.text_cleaned or "")
 
             # Cheap keyword exclusion filter first
             excluded = False
@@ -72,7 +72,7 @@ class JudgeStage:
             if not excluded:
                 result = self._judge.judge(
                     text_cleaned,
-                    post.author_display_name or "",
+                    str(post.author_display_name or ""),
                     project_context,
                 )
                 judgment_result_label = result.label
@@ -111,7 +111,7 @@ class JudgeStage:
 
         return stats
 
-    def _build_project_context(self, config: ProjectConfig) -> dict:
+    def _build_project_context(self, config: ProjectConfig) -> dict[str, Any]:
         return {
             "project_name": config.project_name,
             "description": config.description,

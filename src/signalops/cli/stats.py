@@ -1,5 +1,7 @@
 """Pipeline statistics display."""
 
+from __future__ import annotations
+
 import click
 from rich.panel import Panel
 
@@ -8,7 +10,7 @@ from signalops.cli.project import get_active_project
 
 @click.command("stats")
 @click.pass_context
-def stats_cmd(ctx):
+def stats_cmd(ctx: click.Context) -> None:
     """Show pipeline statistics for the active project."""
     from signalops.config.defaults import DEFAULT_DB_URL
     from signalops.storage.database import (
@@ -48,9 +50,7 @@ def stats_cmd(ctx):
         .count()
     )
     judged_maybe = (
-        session.query(Judgment)
-        .filter_by(project_id=project_id, label=JudgmentLabel.MAYBE)
-        .count()
+        session.query(Judgment).filter_by(project_id=project_id, label=JudgmentLabel.MAYBE).count()
     )
     total_judged = judged_relevant + judged_irrelevant + judged_maybe
 
@@ -58,36 +58,24 @@ def stats_cmd(ctx):
     from sqlalchemy import func
 
     avg_score_result = (
-        session.query(func.avg(Score.total_score))
-        .filter_by(project_id=project_id)
-        .scalar()
+        session.query(func.avg(Score.total_score)).filter_by(project_id=project_id).scalar()
     )
     avg_score = avg_score_result or 0.0
     high_score_count = (
-        session.query(Score)
-        .filter(Score.project_id == project_id, Score.total_score > 70)
-        .count()
+        session.query(Score).filter(Score.project_id == project_id, Score.total_score > 70).count()
     )
 
     draft_pending = (
-        session.query(Draft)
-        .filter_by(project_id=project_id, status=DraftStatus.PENDING)
-        .count()
+        session.query(Draft).filter_by(project_id=project_id, status=DraftStatus.PENDING).count()
     )
     draft_approved = (
-        session.query(Draft)
-        .filter_by(project_id=project_id, status=DraftStatus.APPROVED)
-        .count()
+        session.query(Draft).filter_by(project_id=project_id, status=DraftStatus.APPROVED).count()
     )
     draft_sent = (
-        session.query(Draft)
-        .filter_by(project_id=project_id, status=DraftStatus.SENT)
-        .count()
+        session.query(Draft).filter_by(project_id=project_id, status=DraftStatus.SENT).count()
     )
     draft_rejected = (
-        session.query(Draft)
-        .filter_by(project_id=project_id, status=DraftStatus.REJECTED)
-        .count()
+        session.query(Draft).filter_by(project_id=project_id, status=DraftStatus.REJECTED).count()
     )
     total_drafts = draft_pending + draft_approved + draft_sent + draft_rejected
 
@@ -126,7 +114,7 @@ def stats_cmd(ctx):
         return
 
     # Rich panel display
-    def pct(part, total):
+    def pct(part: int, total: int) -> str:
         return f"{part / total * 100:.1f}%" if total > 0 else "0.0%"
 
     lines = [

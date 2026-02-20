@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.orm import Session
 
@@ -27,7 +27,7 @@ class SenderStage:
         project_id: str,
         config: ProjectConfig,
         dry_run: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Send approved/edited drafts as replies."""
         from signalops.storage.audit import log_action
         from signalops.storage.database import Draft, DraftStatus, NormalizedPost
@@ -66,11 +66,7 @@ class SenderStage:
                 break
 
             # Get associated post
-            post = (
-                self.session.query(NormalizedPost)
-                .filter_by(id=draft.normalized_post_id)
-                .first()
-            )
+            post = self.session.query(NormalizedPost).filter_by(id=draft.normalized_post_id).first()
             if not post:
                 logger.error("NormalizedPost not found for draft %d", draft.id)
                 failed_count += 1
@@ -90,12 +86,12 @@ class SenderStage:
 
             try:
                 reply_id = self.connector.post_reply(
-                    in_reply_to_id=post.platform_id,
-                    text=send_text,
+                    in_reply_to_id=str(post.platform_id),
+                    text=str(send_text),
                 )
-                draft.status = DraftStatus.SENT
-                draft.sent_at = datetime.now(UTC)
-                draft.sent_post_id = reply_id
+                draft.status = DraftStatus.SENT  # type: ignore[assignment]
+                draft.sent_at = datetime.now(UTC)  # type: ignore[assignment]
+                draft.sent_post_id = reply_id  # type: ignore[assignment]
                 self.session.commit()
 
                 log_action(
@@ -103,16 +99,16 @@ class SenderStage:
                     project_id,
                     "send",
                     entity_type="draft",
-                    entity_id=draft.id,
+                    entity_id=int(draft.id),
                     details={
-                        "reply_to": post.platform_id,
+                        "reply_to": str(post.platform_id),
                         "sent_post_id": reply_id,
                     },
                 )
                 sent_count += 1
             except Exception as e:
                 logger.error("Failed to send draft %d: %s", draft.id, e)
-                draft.status = DraftStatus.FAILED
+                draft.status = DraftStatus.FAILED  # type: ignore[assignment]
                 self.session.commit()
                 failed_count += 1
 
@@ -123,9 +119,7 @@ class SenderStage:
             "dry_run": dry_run,
         }
 
-    def _check_rate_limits(
-        self, project_id: str, config: ProjectConfig
-    ) -> tuple[bool, str]:
+    def _check_rate_limits(self, project_id: str, config: ProjectConfig) -> tuple[bool, str]:
         """Check if we're within rate limits. Returns (is_allowed, reason)."""
         from signalops.storage.database import Draft, DraftStatus
 

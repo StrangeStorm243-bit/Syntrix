@@ -1,8 +1,11 @@
 """YAML config loader with environment variable resolution."""
 
+from __future__ import annotations
+
 import hashlib
 import os
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -22,7 +25,7 @@ def load_project(path: str | Path) -> ProjectConfig:
     return config
 
 
-def _resolve_env_vars(obj: object) -> object:
+def _resolve_env_vars(obj: Any) -> Any:
     """Recursively replace ${VAR} with os.environ[VAR]."""
     if isinstance(obj, str):
         if obj.startswith("${") and obj.endswith("}"):

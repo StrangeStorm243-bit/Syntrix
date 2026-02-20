@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 from signalops.models.llm_gateway import LLMGateway
 
@@ -24,13 +25,11 @@ class RelevanceJudge(ABC):
     """Abstract interface for relevance judges."""
 
     @abstractmethod
-    def judge(
-        self, post_text: str, author_bio: str, project_context: dict
-    ) -> Judgment:
+    def judge(self, post_text: str, author_bio: str, project_context: dict[str, Any]) -> Judgment:
         """Judge whether a post is relevant to the project."""
 
     @abstractmethod
-    def judge_batch(self, items: list[dict]) -> list[Judgment]:
+    def judge_batch(self, items: list[dict[str, Any]]) -> list[Judgment]:
         """Batch judgment for efficiency."""
 
 
@@ -41,17 +40,13 @@ class LLMPromptJudge(RelevanceJudge):
         self._gateway = gateway
         self._model = model
 
-    def judge(
-        self, post_text: str, author_bio: str, project_context: dict
-    ) -> Judgment:
+    def judge(self, post_text: str, author_bio: str, project_context: dict[str, Any]) -> Judgment:
         system_prompt = self._build_system_prompt(project_context)
         user_prompt = self._build_user_prompt(post_text, author_bio, project_context)
 
         start = time.perf_counter()
         try:
-            result = self._gateway.complete_json(
-                system_prompt, user_prompt, model=self._model
-            )
+            result = self._gateway.complete_json(system_prompt, user_prompt, model=self._model)
             latency_ms = (time.perf_counter() - start) * 1000
 
             label = result.get("label", "maybe")
@@ -78,7 +73,7 @@ class LLMPromptJudge(RelevanceJudge):
                 latency_ms=latency_ms,
             )
 
-    def judge_batch(self, items: list[dict]) -> list[Judgment]:
+    def judge_batch(self, items: list[dict[str, Any]]) -> list[Judgment]:
         results = []
         for item in items:
             judgment = self.judge(
@@ -89,7 +84,7 @@ class LLMPromptJudge(RelevanceJudge):
             results.append(judgment)
         return results
 
-    def _build_system_prompt(self, project_context: dict) -> str:
+    def _build_system_prompt(self, project_context: dict[str, Any]) -> str:
         project_name = project_context.get("project_name", "Unknown Project")
         description = project_context.get("description", "")
         relevance = project_context.get("relevance", {})
@@ -106,15 +101,15 @@ class LLMPromptJudge(RelevanceJudge):
             f"Positive signals that make a tweet RELEVANT:\n{positive_block}\n\n"
             f"Negative signals that make a tweet IRRELEVANT:\n{negative_block}\n\n"
             "Evaluate the following tweet and respond with ONLY valid JSON:\n"
-            '{\n'
+            "{\n"
             '  "label": "relevant" | "irrelevant" | "maybe",\n'
             '  "confidence": 0.0 to 1.0,\n'
             '  "reasoning": "1-2 sentence explanation"\n'
-            '}'
+            "}"
         )
 
     def _build_user_prompt(
-        self, post_text: str, author_bio: str, metrics: dict | None = None
+        self, post_text: str, author_bio: str, metrics: dict[str, Any] | None = None
     ) -> str:
         parts = [f'Tweet: "{post_text}"']
         if author_bio:
@@ -139,9 +134,7 @@ class KeywordFallbackJudge(RelevanceJudge):
         self._keywords_required = keywords_required or []
         self._keywords_excluded = keywords_excluded or []
 
-    def judge(
-        self, post_text: str, author_bio: str, project_context: dict
-    ) -> Judgment:
+    def judge(self, post_text: str, author_bio: str, project_context: dict[str, Any]) -> Judgment:
         start = time.perf_counter()
         text_lower = post_text.lower()
 
@@ -179,7 +172,7 @@ class KeywordFallbackJudge(RelevanceJudge):
             latency_ms=latency_ms,
         )
 
-    def judge_batch(self, items: list[dict]) -> list[Judgment]:
+    def judge_batch(self, items: list[dict[str, Any]]) -> list[Judgment]:
         return [
             self.judge(
                 item["post_text"],

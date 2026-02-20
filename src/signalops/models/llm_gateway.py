@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any
 
 from signalops.models.providers.base import LLMProvider, ProviderConfig
 
@@ -71,6 +72,7 @@ class LLMGateway:
         if model in self._providers:
             return self._providers[model]
 
+        provider: LLMProvider
         if model.startswith("claude-"):
             from signalops.models.providers.anthropic import AnthropicProvider
 
@@ -98,7 +100,7 @@ class LLMGateway:
         system_prompt: str,
         user_prompt: str,
         model: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         model = model or self._default_model
         provider = self._get_provider(model)
@@ -133,8 +135,8 @@ class LLMGateway:
         system_prompt: str,
         user_prompt: str,
         model: str | None = None,
-        **kwargs,
-    ) -> dict:
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         model = model or self._default_model
         provider = self._get_provider(model)
 
@@ -161,6 +163,4 @@ class LLMGateway:
                 if attempt < 2:
                     time.sleep(2**attempt)
 
-        raise RuntimeError(
-            f"All 3 retry attempts failed for model {model}"
-        ) from last_error
+        raise RuntimeError(f"All 3 retry attempts failed for model {model}") from last_error

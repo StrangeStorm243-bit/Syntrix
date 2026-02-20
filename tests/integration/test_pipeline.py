@@ -97,6 +97,7 @@ def test_sender_dry_run(db_session, sample_project_in_db, mock_connector, sample
 
     # Create a RawPost row (required by FK)
     from signalops.storage.database import RawPost as RawPostDB
+
     raw_post = RawPostDB(
         id=1,
         project_id="test-project",
@@ -124,7 +125,10 @@ def test_sender_dry_run(db_session, sample_project_in_db, mock_connector, sample
 
 
 def test_sender_rate_limit_check(
-    db_session, sample_project_in_db, mock_connector, sample_project_config,
+    db_session,
+    sample_project_in_db,
+    mock_connector,
+    sample_project_config,
 ):
     """Test sender respects rate limits."""
     from signalops.pipeline.sender import SenderStage
@@ -207,6 +211,7 @@ def test_queue_approve_and_reject(db_session, sample_project_in_db):
 
     # Create RawPost (for FK)
     from signalops.storage.database import RawPost as RawPostDB
+
     raw = RawPostDB(id=1, project_id="test-project", platform="x", platform_id="t1", raw_json={})
     db_session.add(raw)
 

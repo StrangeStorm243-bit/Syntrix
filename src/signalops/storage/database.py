@@ -18,6 +18,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 
@@ -83,9 +84,7 @@ class RawPost(Base):
     raw_json = Column(JSON, nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(
-            "platform", "platform_id", "project_id", name="uq_raw_post_platform"
-        ),
+        UniqueConstraint("platform", "platform_id", "project_id", name="uq_raw_post_platform"),
         Index("ix_raw_post_project_collected", "project_id", "collected_at"),
     )
 
@@ -97,9 +96,7 @@ class NormalizedPost(Base):
     __tablename__ = "normalized_posts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    raw_post_id = Column(
-        Integer, ForeignKey("raw_posts.id"), unique=True, nullable=False
-    )
+    raw_post_id = Column(Integer, ForeignKey("raw_posts.id"), unique=True, nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
     platform = Column(String(32), nullable=False)
     platform_id = Column(String(64), nullable=False)
@@ -135,11 +132,9 @@ class Judgment(Base):
     __tablename__ = "judgments"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    normalized_post_id = Column(
-        Integer, ForeignKey("normalized_posts.id"), nullable=False
-    )
+    normalized_post_id = Column(Integer, ForeignKey("normalized_posts.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
-    label = Column(SAEnum(JudgmentLabel), nullable=False)
+    label = Column(SAEnum(JudgmentLabel), nullable=False)  # type: ignore[var-annotated]
     confidence = Column(Float, nullable=False)
     reasoning = Column(Text)
     model_id = Column(String(128), nullable=False)
@@ -148,7 +143,7 @@ class Judgment(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     # Human correction (nullable — only set if human overrides)
-    human_label = Column(SAEnum(JudgmentLabel))
+    human_label = Column(SAEnum(JudgmentLabel))  # type: ignore[var-annotated]
     human_corrected_at = Column(DateTime)
     human_reason = Column(Text)
 
@@ -162,9 +157,7 @@ class Score(Base):
     __tablename__ = "scores"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    normalized_post_id = Column(
-        Integer, ForeignKey("normalized_posts.id"), nullable=False
-    )
+    normalized_post_id = Column(Integer, ForeignKey("normalized_posts.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
     total_score = Column(Float, nullable=False)
     components = Column(JSON, nullable=False)
@@ -181,16 +174,14 @@ class Draft(Base):
     __tablename__ = "drafts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    normalized_post_id = Column(
-        Integer, ForeignKey("normalized_posts.id"), nullable=False
-    )
+    normalized_post_id = Column(Integer, ForeignKey("normalized_posts.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
     text_generated = Column(Text, nullable=False)
     text_final = Column(Text)
     tone = Column(String(64))
     template_used = Column(String(128))
     model_id = Column(String(128), nullable=False)
-    status = Column(SAEnum(DraftStatus), default=DraftStatus.PENDING)
+    status = Column(SAEnum(DraftStatus), default=DraftStatus.PENDING)  # type: ignore[var-annotated]
     created_at = Column(DateTime, server_default=func.now())
     approved_at = Column(DateTime)
     sent_at = Column(DateTime)
@@ -208,7 +199,7 @@ class Outcome(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     draft_id = Column(Integer, ForeignKey("drafts.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
-    outcome_type = Column(SAEnum(OutcomeType), nullable=False)
+    outcome_type = Column(SAEnum(OutcomeType), nullable=False)  # type: ignore[var-annotated]
     details = Column(JSON)
     observed_at = Column(DateTime, server_default=func.now())
 
@@ -237,17 +228,17 @@ class AuditLog(Base):
 # ── Engine / Session helpers ──
 
 
-def get_engine(db_url: str = "sqlite:///signalops.db"):
+def get_engine(db_url: str = "sqlite:///signalops.db") -> Engine:
     """Create a SQLAlchemy engine."""
     return create_engine(db_url, echo=False)
 
 
-def get_session(engine) -> Session:
+def get_session(engine: Engine) -> Session:
     """Create a new session bound to the engine."""
     session_factory = sessionmaker(bind=engine)
     return session_factory()
 
 
-def init_db(engine) -> None:
+def init_db(engine: Engine) -> None:
     """Create all tables."""
     Base.metadata.create_all(engine)

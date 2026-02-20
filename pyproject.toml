@@ -29,6 +29,7 @@ dev = [
     "mypy>=1.11",
     "ruff>=0.6",
     "respx>=0.21",
+    "types-PyYAML>=6.0",
 ]
 
 [project.scripts]
@@ -45,6 +46,14 @@ select = ["E", "F", "I", "N", "W", "UP"]
 python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sklearn.*",
+    "joblib",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

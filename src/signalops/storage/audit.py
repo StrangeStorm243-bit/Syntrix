@@ -1,5 +1,9 @@
 """Append-only audit logger for all pipeline actions."""
 
+from __future__ import annotations
+
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from .database import AuditLog
@@ -11,7 +15,7 @@ def log_action(
     action: str,
     entity_type: str | None = None,
     entity_id: int | None = None,
-    details: dict | None = None,
+    details: dict[str, Any] | None = None,
     user: str = "system",
 ) -> AuditLog:
     """Create an audit log entry and commit."""
@@ -28,9 +32,7 @@ def log_action(
     return entry
 
 
-def get_recent_actions(
-    session: Session, project_id: str, limit: int = 50
-) -> list[AuditLog]:
+def get_recent_actions(session: Session, project_id: str, limit: int = 50) -> list[AuditLog]:
     """Return most recent audit entries for a project."""
     return (
         session.query(AuditLog)

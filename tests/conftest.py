@@ -86,9 +86,7 @@ def sample_raw_post_data():
                     "name": "Sara Chen",
                     "public_metrics": {"followers_count": 2340},
                     "verified": False,
-                    "description": (
-                        "Senior engineer @BigCorp. Building distributed systems."
-                    ),
+                    "description": ("Senior engineer @BigCorp. Building distributed systems."),
                 }
             ]
         },

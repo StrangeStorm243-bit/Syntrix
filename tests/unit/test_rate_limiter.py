@@ -60,10 +60,12 @@ class TestHeaderUpdates:
     def test_update_remaining_and_reset(self):
         rl = RateLimiter(max_requests=300, window_seconds=900)
         future = str(int(time.time()) + 60)
-        rl.update_from_headers({
-            "x-rate-limit-remaining": "0",
-            "x-rate-limit-reset": future,
-        })
+        rl.update_from_headers(
+            {
+                "x-rate-limit-remaining": "0",
+                "x-rate-limit-reset": future,
+            }
+        )
         # Should block because remaining is 0
         wait = rl.acquire()
         assert wait > 0

@@ -1,5 +1,7 @@
 """SignalOps CLI — main entry point."""
 
+from __future__ import annotations
+
 import click
 from dotenv import load_dotenv
 from rich.console import Console
@@ -22,7 +24,9 @@ console = Console()
     help="Output format",
 )
 @click.pass_context
-def cli(ctx, project, dry_run, verbose, output_format):
+def cli(
+    ctx: click.Context, project: str | None, dry_run: bool, verbose: bool, output_format: str
+) -> None:
     """SignalOps — Agentic social lead finder + outreach workbench."""
     ctx.ensure_object(dict)
     ctx.obj["project"] = project

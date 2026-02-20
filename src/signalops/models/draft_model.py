@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 from signalops.models.llm_gateway import LLMGateway
 
@@ -26,8 +27,8 @@ class DraftGenerator(ABC):
         self,
         post_text: str,
         author_context: str,
-        project_context: dict,
-        persona: dict,
+        project_context: dict[str, Any],
+        persona: dict[str, Any],
     ) -> Draft:
         """Generate a reply draft for a relevant post."""
 
@@ -45,17 +46,13 @@ class LLMDraftGenerator(DraftGenerator):
         self,
         post_text: str,
         author_context: str,
-        project_context: dict,
-        persona: dict,
+        project_context: dict[str, Any],
+        persona: dict[str, Any],
     ) -> Draft:
         system_prompt = self._build_system_prompt(persona, project_context)
-        user_prompt = self._build_user_prompt(
-            post_text, author_context, project_context
-        )
+        user_prompt = self._build_user_prompt(post_text, author_context, project_context)
 
-        text = self._gateway.complete(
-            system_prompt, user_prompt, model=self._model
-        ).strip()
+        text = self._gateway.complete(system_prompt, user_prompt, model=self._model).strip()
 
         # Enforce character limit
         if len(text) > self.MAX_CHARS:
@@ -63,9 +60,7 @@ class LLMDraftGenerator(DraftGenerator):
                 f"Shorten this reply to under {self.MAX_CHARS} characters while "
                 f"keeping the same meaning and tone:\n\n{text}"
             )
-            text = self._gateway.complete(
-                system_prompt, shorten_prompt, model=self._model
-            ).strip()
+            text = self._gateway.complete(system_prompt, shorten_prompt, model=self._model).strip()
 
         # Hard truncate if still over
         if len(text) > self.MAX_CHARS:
@@ -78,7 +73,7 @@ class LLMDraftGenerator(DraftGenerator):
             template_used=None,
         )
 
-    def _build_system_prompt(self, persona: dict, project_context: dict) -> str:
+    def _build_system_prompt(self, persona: dict[str, Any], project_context: dict[str, Any]) -> str:
         project_name = project_context.get("project_name", "the product")
         return (
             f"You are {persona.get('name', 'an assistant')}, "
@@ -86,7 +81,7 @@ class LLMDraftGenerator(DraftGenerator):
             f"Your tone is {persona.get('tone', 'helpful')}.\n\n"
             f"{persona.get('voice_notes', '')}\n\n"
             f"Example reply style:\n"
-            f"\"{persona.get('example_reply', '')}\"\n\n"
+            f'"{persona.get("example_reply", "")}"\n\n'
             f"Rules:\n"
             f"- Keep reply under {self.MAX_CHARS} characters\n"
             f"- Be genuinely helpful, not salesy\n"
@@ -94,11 +89,11 @@ class LLMDraftGenerator(DraftGenerator):
             f"- Only mention {project_name} if it's truly relevant to their situation\n"
             f"- No hashtags, no emojis (unless the original poster uses them)\n"
             f"- Sound human, not corporate\n"
-            f"- Never use phrases like \"I understand your frustration\" or \"Great question!\""
+            f'- Never use phrases like "I understand your frustration" or "Great question!"'
         )
 
     def _build_user_prompt(
-        self, post_text: str, author_context: str, project_context: dict
+        self, post_text: str, author_context: str, project_context: dict[str, Any]
     ) -> str:
         parts = [
             "Write a reply to this tweet.\n",

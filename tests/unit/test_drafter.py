@@ -91,8 +91,10 @@ def sample_config():
 def test_generate_basic_draft(mock_gateway, persona, project_context):
     gen = LLMDraftGenerator(mock_gateway)
     draft = gen.generate(
-        "PR reviews take forever", "@dev (500 followers)",
-        project_context, persona,
+        "PR reviews take forever",
+        "@dev (500 followers)",
+        project_context,
+        persona,
     )
     assert isinstance(draft, Draft)
     assert len(draft.text) <= 240
@@ -169,23 +171,34 @@ def test_draft_stage_min_score_filter(db_session, sample_config):
     """Only posts above min_score get drafted."""
     # Create a post with low score
     post = NormalizedPost(
-        raw_post_id=1, project_id="test-project", platform="twitter",
-        platform_id="t1", author_id="a1", text_original="test",
-        text_cleaned="test", created_at=datetime.now(UTC),
+        raw_post_id=1,
+        project_id="test-project",
+        platform="twitter",
+        platform_id="t1",
+        author_id="a1",
+        text_original="test",
+        text_cleaned="test",
+        created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()
 
     judgment = JudgmentRow(
-        normalized_post_id=post.id, project_id="test-project",
-        label=JudgmentLabel.RELEVANT, confidence=0.5,
-        reasoning="Low relevance", model_id="test",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        label=JudgmentLabel.RELEVANT,
+        confidence=0.5,
+        reasoning="Low relevance",
+        model_id="test",
     )
     db_session.add(judgment)
 
     score = ScoreRow(
-        normalized_post_id=post.id, project_id="test-project",
-        total_score=30.0, components={}, scoring_version="v1",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        total_score=30.0,
+        components={},
+        scoring_version="v1",
     )
     db_session.add(score)
     db_session.commit()
@@ -202,23 +215,34 @@ def test_draft_stage_top_n_limit(db_session, sample_config):
     """Only top N posts get drafted."""
     for i in range(5):
         post = NormalizedPost(
-            raw_post_id=i + 1, project_id="test-project", platform="twitter",
-            platform_id=f"t{i}", author_id=f"a{i}", text_original=f"test {i}",
-            text_cleaned=f"test {i}", created_at=datetime.now(UTC),
+            raw_post_id=i + 1,
+            project_id="test-project",
+            platform="twitter",
+            platform_id=f"t{i}",
+            author_id=f"a{i}",
+            text_original=f"test {i}",
+            text_cleaned=f"test {i}",
+            created_at=datetime.now(UTC),
         )
         db_session.add(post)
         db_session.commit()
 
         judgment = JudgmentRow(
-            normalized_post_id=post.id, project_id="test-project",
-            label=JudgmentLabel.RELEVANT, confidence=0.9,
-            reasoning="Relevant", model_id="test",
+            normalized_post_id=post.id,
+            project_id="test-project",
+            label=JudgmentLabel.RELEVANT,
+            confidence=0.9,
+            reasoning="Relevant",
+            model_id="test",
         )
         db_session.add(judgment)
 
         score = ScoreRow(
-            normalized_post_id=post.id, project_id="test-project",
-            total_score=80.0 + i, components={}, scoring_version="v1",
+            normalized_post_id=post.id,
+            project_id="test-project",
+            total_score=80.0 + i,
+            components={},
+            scoring_version="v1",
         )
         db_session.add(score)
     db_session.commit()
@@ -237,25 +261,38 @@ def test_draft_stage_top_n_limit(db_session, sample_config):
 def test_draft_stage_skips_already_drafted(db_session, sample_config):
     """Posts with existing drafts are skipped."""
     post = NormalizedPost(
-        raw_post_id=1, project_id="test-project", platform="twitter",
-        platform_id="t1", author_id="a1", text_original="test",
-        text_cleaned="test", created_at=datetime.now(UTC),
+        raw_post_id=1,
+        project_id="test-project",
+        platform="twitter",
+        platform_id="t1",
+        author_id="a1",
+        text_original="test",
+        text_cleaned="test",
+        created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()
 
     judgment = JudgmentRow(
-        normalized_post_id=post.id, project_id="test-project",
-        label=JudgmentLabel.RELEVANT, confidence=0.9,
-        reasoning="Relevant", model_id="test",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        label=JudgmentLabel.RELEVANT,
+        confidence=0.9,
+        reasoning="Relevant",
+        model_id="test",
     )
     score = ScoreRow(
-        normalized_post_id=post.id, project_id="test-project",
-        total_score=85.0, components={}, scoring_version="v1",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        total_score=85.0,
+        components={},
+        scoring_version="v1",
     )
     existing_draft = DraftRow(
-        normalized_post_id=post.id, project_id="test-project",
-        text_generated="Already drafted", model_id="test",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        text_generated="Already drafted",
+        model_id="test",
         status=DraftStatus.PENDING,
     )
     db_session.add_all([judgment, score, existing_draft])
@@ -272,21 +309,32 @@ def test_draft_stage_skips_already_drafted(db_session, sample_config):
 def test_draft_stage_dry_run(db_session, sample_config):
     """dry_run=True doesn't create DB rows."""
     post = NormalizedPost(
-        raw_post_id=1, project_id="test-project", platform="twitter",
-        platform_id="t1", author_id="a1", text_original="test",
-        text_cleaned="test", created_at=datetime.now(UTC),
+        raw_post_id=1,
+        project_id="test-project",
+        platform="twitter",
+        platform_id="t1",
+        author_id="a1",
+        text_original="test",
+        text_cleaned="test",
+        created_at=datetime.now(UTC),
     )
     db_session.add(post)
     db_session.commit()
 
     judgment = JudgmentRow(
-        normalized_post_id=post.id, project_id="test-project",
-        label=JudgmentLabel.RELEVANT, confidence=0.9,
-        reasoning="Relevant", model_id="test",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        label=JudgmentLabel.RELEVANT,
+        confidence=0.9,
+        reasoning="Relevant",
+        model_id="test",
     )
     score = ScoreRow(
-        normalized_post_id=post.id, project_id="test-project",
-        total_score=85.0, components={}, scoring_version="v1",
+        normalized_post_id=post.id,
+        project_id="test-project",
+        total_score=85.0,
+        components={},
+        scoring_version="v1",
     )
     db_session.add_all([judgment, score])
     db_session.commit()

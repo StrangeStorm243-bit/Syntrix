@@ -1,6 +1,9 @@
 """Collector stage: fetches tweets via connector and stores them as raw posts."""
 
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -20,11 +23,11 @@ class CollectorStage:
         self.connector = connector
         self.db = db_session
 
-    def run(self, config: ProjectConfig, dry_run: bool = False) -> dict:
+    def run(self, config: ProjectConfig, dry_run: bool = False) -> dict[str, Any]:
         """Collect tweets for all enabled queries in the project config."""
         total_new = 0
         total_skipped = 0
-        per_query: list[dict] = []
+        per_query: list[dict[str, Any]] = []
 
         for query_cfg in config.queries:
             if not query_cfg.enabled:
@@ -77,9 +80,7 @@ class CollectorStage:
 
             total_new += query_new
             total_skipped += query_skipped
-            per_query.append(
-                {"label": query_cfg.label, "new": query_new, "skipped": query_skipped}
-            )
+            per_query.append({"label": query_cfg.label, "new": query_new, "skipped": query_skipped})
 
             if not dry_run:
                 log_action(

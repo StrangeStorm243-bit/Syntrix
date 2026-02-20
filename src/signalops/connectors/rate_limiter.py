@@ -54,7 +54,7 @@ class RateLimiter:
         wait = (oldest + self.window_seconds) - now
         return self._add_jitter(max(0.0, wait))
 
-    def update_from_headers(self, headers: dict) -> None:
+    def update_from_headers(self, headers: dict[str, str]) -> None:
         """Update rate limit state from X API response headers."""
         remaining = headers.get("x-rate-limit-remaining")
         reset = headers.get("x-rate-limit-reset")

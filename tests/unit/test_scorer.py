@@ -149,8 +149,13 @@ def test_custom_weights():
     judgment = make_judgment("relevant", 0.9)
 
     config_default = make_config()
-    config_custom = make_config(relevance_judgment=0.9, author_authority=0.025,
-                                engagement_signals=0.025, recency=0.025, intent_strength=0.025)
+    config_custom = make_config(
+        relevance_judgment=0.9,
+        author_authority=0.025,
+        engagement_signals=0.025,
+        recency=0.025,
+        intent_strength=0.025,
+    )
 
     total_default, _ = stage.compute_score(post, judgment, config_default)
     total_custom, _ = stage.compute_score(post, judgment, config_custom)

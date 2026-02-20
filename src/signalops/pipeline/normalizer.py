@@ -1,8 +1,11 @@
 """Normalizer stage: cleans raw posts and produces normalized posts."""
 
+from __future__ import annotations
+
 import logging
 import re
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -21,21 +24,17 @@ def clean_text(text: str) -> str:
     return cleaned.strip()
 
 
-def extract_hashtags(entities: dict) -> list[str]:
+def extract_hashtags(entities: dict[str, Any]) -> list[str]:
     """Extract hashtag tags from X API entities."""
     return [h.get("tag", "") for h in entities.get("hashtags", []) if h.get("tag")]
 
 
-def extract_mentions(entities: dict) -> list[str]:
+def extract_mentions(entities: dict[str, Any]) -> list[str]:
     """Extract mention usernames from X API entities."""
-    return [
-        f"@{m.get('username', '')}"
-        for m in entities.get("mentions", [])
-        if m.get("username")
-    ]
+    return [f"@{m.get('username', '')}" for m in entities.get("mentions", []) if m.get("username")]
 
 
-def extract_urls(entities: dict) -> list[str]:
+def extract_urls(entities: dict[str, Any]) -> list[str]:
     """Extract expanded URLs from X API entities."""
     return [
         u.get("expanded_url", u.get("url", ""))
@@ -63,9 +62,7 @@ def detect_language(text: str, api_lang: str | None) -> str | None:
 class NormalizerStage:
     """Pipeline stage that normalizes raw posts."""
 
-    def run(
-        self, db_session: Session, project_id: str, dry_run: bool = False
-    ) -> dict:
+    def run(self, db_session: Session, project_id: str, dry_run: bool = False) -> dict[str, Any]:
         """Normalize all raw posts that don't yet have a normalized version."""
         existing_raw_ids = (
             db_session.query(NormalizedPost.raw_post_id)
@@ -74,7 +71,7 @@ class NormalizerStage:
         )
         raw_posts = (
             db_session.query(RawPost)
-            .filter(RawPost.project_id == project_id, ~RawPost.id.in_(existing_raw_ids))
+            .filter(RawPost.project_id == project_id, ~RawPost.id.in_(existing_raw_ids))  # type: ignore[arg-type]
             .all()
         )
 
@@ -108,7 +105,7 @@ class NormalizerStage:
 
         author_id = data.get("author_id", "")
         users = raw.get("includes", {}).get("users", []) if "includes" in raw else []
-        user = next((u for u in users if u.get("id") == author_id), {})
+        user: dict[str, Any] = next((u for u in users if u.get("id") == author_id), {})
 
         created_str = data.get("created_at", "")
         try:

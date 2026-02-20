@@ -1,5 +1,7 @@
 """Run judge command — judges relevance of collected tweets."""
 
+from __future__ import annotations
+
 import click
 
 from signalops.cli.collect import run_group
@@ -7,7 +9,7 @@ from signalops.cli.collect import run_group
 
 @run_group.command("judge")
 @click.pass_context
-def judge_cmd(ctx):
+def judge_cmd(ctx: click.Context) -> None:
     """Judge relevance of collected tweets."""
     from signalops.cli.project import load_active_config
     from signalops.config.defaults import DEFAULT_DB_URL
@@ -29,7 +31,7 @@ def judge_cmd(ctx):
 
     gateway = LLMGateway()
     model_id = config.llm.get("judge_model", "claude-sonnet-4-6")
-    judge = LLMPromptJudge(gateway=gateway, model_id=model_id)
+    judge = LLMPromptJudge(gateway=gateway, model=model_id)
     judge_stage = JudgeStage(judge=judge, db_session=session)
 
     if dry_run:

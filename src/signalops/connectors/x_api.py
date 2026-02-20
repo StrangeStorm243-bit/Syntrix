@@ -1,8 +1,11 @@
 """X API v2 connector implementation."""
 
+from __future__ import annotations
+
 import logging
 import time
 from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 
@@ -54,7 +57,7 @@ class XConnector(Connector):
         """Search for recent tweets matching query."""
         self._wait_for_rate_limit()
 
-        params: dict = {
+        params: dict[str, Any] = {
             "query": query,
             "max_results": min(max_results, 100),
             "tweet.fields": TWEET_FIELDS,
@@ -91,7 +94,7 @@ class XConnector(Connector):
 
         return posts
 
-    def get_user(self, user_id: str) -> dict:
+    def get_user(self, user_id: str) -> dict[str, Any]:
         """Fetch user profile by ID."""
         self._wait_for_rate_limit()
 
@@ -101,7 +104,8 @@ class XConnector(Connector):
         )
         self._update_rate_limits(response)
         response.raise_for_status()
-        return response.json().get("data", {})
+        data: dict[str, Any] = response.json().get("data", {})
+        return data
 
     def post_reply(self, in_reply_to_id: str, text: str) -> str:
         """Post a reply tweet. Requires user OAuth token."""
@@ -124,8 +128,9 @@ class XConnector(Connector):
         self._update_rate_limits(response)
         response.raise_for_status()
 
-        result = response.json()
-        return result["data"]["id"]
+        result: dict[str, Any] = response.json()
+        post_id: str = result["data"]["id"]
+        return post_id
 
     def health_check(self) -> bool:
         """Verify API connectivity and auth."""
@@ -138,7 +143,7 @@ class XConnector(Connector):
         except httpx.HTTPError:
             return False
 
-    def _parse_tweet(self, tweet: dict, users: dict) -> RawPost | None:
+    def _parse_tweet(self, tweet: dict[str, Any], users: dict[str, Any]) -> RawPost | None:
         """Parse a single X API v2 tweet into a RawPost."""
         author_id = tweet.get("author_id", "")
         user = users.get(author_id, {})

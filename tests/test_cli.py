@@ -134,18 +134,14 @@ def test_verbose_flag(runner):
 def test_project_list_no_projects(runner, tmp_path, monkeypatch):
     """Test project list with no projects directory."""
 
-    monkeypatch.setattr(
-        "signalops.config.defaults.DEFAULT_PROJECTS_DIR", tmp_path / "nonexistent"
-    )
+    monkeypatch.setattr("signalops.config.defaults.DEFAULT_PROJECTS_DIR", tmp_path / "nonexistent")
     result = runner.invoke(cli, ["project", "list"])
     assert result.exit_code == 0
 
 
 def test_project_set_nonexistent(runner, tmp_path, monkeypatch):
     """Test setting a project that doesn't exist."""
-    monkeypatch.setattr(
-        "signalops.config.defaults.DEFAULT_PROJECTS_DIR", tmp_path
-    )
+    monkeypatch.setattr("signalops.config.defaults.DEFAULT_PROJECTS_DIR", tmp_path)
     result = runner.invoke(cli, ["project", "set", "nonexistent"])
     assert result.exit_code != 0 or "not found" in result.output.lower()
 
@@ -156,9 +152,7 @@ def test_project_set_and_list(runner, tmp_path, monkeypatch):
 
     # Must patch where the names are used (in project.py), not where defined
     monkeypatch.setattr("signalops.cli.project.DEFAULT_PROJECTS_DIR", tmp_path)
-    monkeypatch.setattr(
-        "signalops.cli.project.DEFAULT_CREDENTIALS_DIR", tmp_path / ".creds"
-    )
+    monkeypatch.setattr("signalops.cli.project.DEFAULT_CREDENTIALS_DIR", tmp_path / ".creds")
 
     # Create a project YAML
     config = {
@@ -196,9 +190,7 @@ def test_stats_with_db(runner, tmp_path, monkeypatch, db_session, sample_project
     """Test stats command with an initialized DB."""
 
     # Monkeypatch to use our in-memory DB
-    monkeypatch.setattr(
-        "signalops.config.defaults.DEFAULT_CREDENTIALS_DIR", tmp_path / ".creds"
-    )
+    monkeypatch.setattr("signalops.config.defaults.DEFAULT_CREDENTIALS_DIR", tmp_path / ".creds")
 
     # Write active project
     creds_dir = tmp_path / ".creds"

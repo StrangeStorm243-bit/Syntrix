@@ -1,8 +1,11 @@
 """Abstract base class for platform connectors and shared data types."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -21,9 +24,9 @@ class RawPost:
     language: str | None
     reply_to_id: str | None
     conversation_id: str | None
-    metrics: dict = field(default_factory=dict)
-    entities: dict = field(default_factory=dict)
-    raw_json: dict = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    entities: dict[str, Any] = field(default_factory=dict)
+    raw_json: dict[str, Any] = field(default_factory=dict)
 
 
 class Connector(ABC):
@@ -39,7 +42,7 @@ class Connector(ABC):
         """Search for posts matching query. Returns newest first."""
 
     @abstractmethod
-    def get_user(self, user_id: str) -> dict:
+    def get_user(self, user_id: str) -> dict[str, Any]:
         """Fetch user profile by ID."""
 
     @abstractmethod

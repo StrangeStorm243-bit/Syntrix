@@ -1,11 +1,14 @@
 """OAuth 2.0 PKCE flow for X API authentication."""
 
+from __future__ import annotations
+
 import base64
 import hashlib
 import json
 import secrets
 import time
 from pathlib import Path
+from typing import Any
 
 import httpx
 
@@ -57,25 +60,29 @@ def exchange_code(
     code: str,
     code_verifier: str,
     redirect_uri: str,
-) -> dict:
+) -> dict[str, Any]:
     """Exchange authorization code for tokens."""
-    data = {
+    data: dict[str, str] = {
         "grant_type": "authorization_code",
         "code": code,
         "redirect_uri": redirect_uri,
         "code_verifier": code_verifier,
     }
 
-    auth = None
+    auth: tuple[str, str] | None = None
     if client_secret:
         auth = (client_id, client_secret)
     else:
         data["client_id"] = client_id
 
     with httpx.Client() as client:
-        response = client.post(TOKEN_URL, data=data, auth=auth)
+        response = client.post(
+            TOKEN_URL,
+            data=data,
+            auth=auth,  # type: ignore[arg-type]
+        )
         response.raise_for_status()
-        tokens = response.json()
+        tokens: dict[str, Any] = response.json()
 
     tokens["expires_at"] = time.time() + tokens.get("expires_in", 7200)
     return tokens
@@ -85,30 +92,34 @@ def refresh_token(
     client_id: str,
     client_secret: str | None,
     refresh_tok: str,
-) -> dict:
+) -> dict[str, Any]:
     """Refresh an expired access token."""
-    data = {
+    data: dict[str, str] = {
         "grant_type": "refresh_token",
         "refresh_token": refresh_tok,
     }
 
-    auth = None
+    auth: tuple[str, str] | None = None
     if client_secret:
         auth = (client_id, client_secret)
     else:
         data["client_id"] = client_id
 
     with httpx.Client() as client:
-        response = client.post(TOKEN_URL, data=data, auth=auth)
+        response = client.post(
+            TOKEN_URL,
+            data=data,
+            auth=auth,  # type: ignore[arg-type]
+        )
         response.raise_for_status()
-        tokens = response.json()
+        tokens: dict[str, Any] = response.json()
 
     tokens["expires_at"] = time.time() + tokens.get("expires_in", 7200)
     return tokens
 
 
 def store_credentials(
-    credentials: dict,
+    credentials: dict[str, Any],
     path: Path | None = None,
 ) -> None:
     """Store credentials as JSON file."""
@@ -119,17 +130,18 @@ def store_credentials(
         json.dump(credentials, f, indent=2)
 
 
-def load_credentials(path: Path | None = None) -> dict | None:
+def load_credentials(path: Path | None = None) -> dict[str, Any] | None:
     """Load credentials from JSON file. Returns None if not found."""
     if path is None:
         path = DEFAULT_CREDENTIALS_DIR / CREDENTIALS_FILE
     if not path.exists():
         return None
     with open(path) as f:
-        return json.load(f)
+        result: dict[str, Any] = json.load(f)
+        return result
 
 
-def is_token_expired(credentials: dict) -> bool:
+def is_token_expired(credentials: dict[str, Any]) -> bool:
     """Check if the access token has expired (with 5-minute buffer)."""
-    expires_at = credentials.get("expires_at", 0)
+    expires_at = float(credentials.get("expires_at", 0))
     return time.time() > (expires_at - 300)

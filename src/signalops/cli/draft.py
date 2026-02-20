@@ -1,5 +1,7 @@
 """Run draft command — generates reply drafts for top-scored leads."""
 
+from __future__ import annotations
+
 import click
 
 from signalops.cli.collect import run_group
@@ -8,7 +10,7 @@ from signalops.cli.collect import run_group
 @run_group.command("draft")
 @click.option("--top", default=10, help="Number of top-scored posts to draft replies for")
 @click.pass_context
-def draft_cmd(ctx, top):
+def draft_cmd(ctx: click.Context, top: int) -> None:
     """Generate reply drafts for top-scored leads."""
     from signalops.cli.project import load_active_config
     from signalops.config.defaults import DEFAULT_DB_URL
@@ -30,7 +32,7 @@ def draft_cmd(ctx, top):
     gateway = LLMGateway()
     generator = LLMDraftGenerator(
         gateway=gateway,
-        model_id=config.llm.get("draft_model", "claude-sonnet-4-6"),
+        model=config.llm.get("draft_model", "claude-sonnet-4-6"),
     )
     drafter = DrafterStage(generator=generator, db_session=session)
 

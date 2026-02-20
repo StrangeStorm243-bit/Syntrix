@@ -1,5 +1,7 @@
 """Run score command — scores judged tweets."""
 
+from __future__ import annotations
+
 import click
 
 from signalops.cli.collect import run_group
@@ -7,7 +9,7 @@ from signalops.cli.collect import run_group
 
 @run_group.command("score")
 @click.pass_context
-def score_cmd(ctx):
+def score_cmd(ctx: click.Context) -> None:
     """Score judged tweets."""
     from signalops.cli.project import load_active_config
     from signalops.config.defaults import DEFAULT_DB_URL
