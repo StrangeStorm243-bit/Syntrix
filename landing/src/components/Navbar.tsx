@@ -37,7 +37,7 @@ export function Navbar() {
         {/* Wordmark */}
         <a
           href="#"
-          className="font-heading text-sm font-semibold tracking-widest text-white"
+          className="font-heading text-sm font-semibold tracking-widest text-white focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none rounded-sm"
         >
           SYNTRIX
         </a>
@@ -48,7 +48,7 @@ export function Navbar() {
             <a
               key={link.label}
               href={link.href}
-              className="font-body text-sm text-slate-400 transition-colors duration-200 hover:text-white"
+              className="font-body text-sm text-slate-400 transition-colors duration-200 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none rounded-sm"
               {...(link.href.startsWith("http")
                 ? { target: "_blank", rel: "noopener noreferrer" }
                 : {})}
@@ -62,7 +62,7 @@ export function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-2 rounded-lg border border-cta-green/30 bg-cta-green/5 px-3 py-1.5 font-mono text-xs text-cta-green transition-colors duration-200 hover:bg-cta-green/10 cursor-pointer"
+            className="flex items-center gap-2 rounded-lg border border-cta-green/30 bg-cta-green/5 px-3 py-1.5 font-mono text-xs text-cta-green transition-colors duration-200 hover:bg-cta-green/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
           >
             <span>pip install signalops</span>
             {copied ? (
@@ -76,7 +76,7 @@ export function Navbar() {
         {/* Mobile hamburger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="text-slate-400 hover:text-white md:hidden cursor-pointer"
+          className="text-slate-400 hover:text-white md:hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none rounded-sm"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -91,7 +91,7 @@ export function Navbar() {
               <a
                 key={link.label}
                 href={link.href}
-                className="font-body text-sm text-slate-400 transition-colors duration-200 hover:text-white"
+                className="font-body text-sm text-slate-400 transition-colors duration-200 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none rounded-sm"
                 onClick={() => setMobileOpen(false)}
                 {...(link.href.startsWith("http")
                   ? { target: "_blank", rel: "noopener noreferrer" }
@@ -102,7 +102,7 @@ export function Navbar() {
             ))}
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 rounded-lg border border-cta-green/30 bg-cta-green/5 px-3 py-1.5 font-mono text-xs text-cta-green cursor-pointer w-fit"
+              className="flex items-center gap-2 rounded-lg border border-cta-green/30 bg-cta-green/5 px-3 py-1.5 font-mono text-xs text-cta-green cursor-pointer w-fit focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
             >
               <span>pip install signalops</span>
               {copied ? (

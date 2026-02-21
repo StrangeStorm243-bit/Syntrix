@@ -23,7 +23,7 @@ export function CodeBlock({ code, language = "bash" }: CodeBlockProps) {
         <span className="text-xs text-slate-500">{language}</span>
         <button
           onClick={handleCopy}
-          className="text-slate-500 hover:text-slate-300 transition-colors duration-200 cursor-pointer"
+          className="text-slate-500 hover:text-slate-300 transition-colors duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none rounded-sm"
           aria-label="Copy code"
         >
           {copied ? (

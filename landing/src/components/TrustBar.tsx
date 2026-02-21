@@ -25,7 +25,7 @@ export function TrustBar() {
           href="https://github.com/StrangeStorm243-bit/Syntrix"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-full border border-white/5 px-4 py-1.5 text-xs text-slate-500 transition-colors duration-200 hover:text-slate-300 cursor-pointer"
+          className="flex items-center gap-2 rounded-full border border-white/5 px-4 py-1.5 text-xs text-slate-500 transition-colors duration-200 hover:text-slate-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
         >
           <img
             src="https://img.shields.io/github/stars/StrangeStorm243-bit/Syntrix?style=flat&color=22C55E&labelColor=0F172A"

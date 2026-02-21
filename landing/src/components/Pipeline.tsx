@@ -75,7 +75,7 @@ export function Pipeline() {
           {STAGES.map((stage, i) => (
             <div key={stage.name} className="flex items-center md:flex-1">
               {/* Stage card */}
-              <div className="group flex w-full flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20 cursor-pointer">
+              <div className="group flex w-full flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20">
                 <div
                   className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${stage.gradient} to-transparent`}
                 >

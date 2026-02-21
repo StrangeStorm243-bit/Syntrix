@@ -55,7 +55,7 @@ export function Hero() {
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 rounded-xl border border-cta-green/40 bg-cta-green/10 px-6 py-3 font-mono text-sm text-cta-green transition-all duration-200 hover:bg-cta-green/20 hover:border-cta-green/60 cursor-pointer"
+              className="flex items-center gap-2 rounded-xl border border-cta-green/40 bg-cta-green/10 px-6 py-3 font-mono text-sm text-cta-green transition-all duration-200 hover:bg-cta-green/20 hover:border-cta-green/60 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
             >
               <span>pip install signalops</span>
               {copied ? (
@@ -69,7 +69,7 @@ export function Hero() {
               href="https://github.com/StrangeStorm243-bit/Syntrix"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-body text-sm text-slate-300 transition-all duration-200 hover:bg-white/10 hover:text-white cursor-pointer"
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-body text-sm text-slate-300 transition-all duration-200 hover:bg-white/10 hover:text-white cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
             >
               <Github className="h-4 w-4" />
               <span>View on GitHub</span>
