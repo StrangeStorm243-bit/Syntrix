@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #050510;
+  --color-aurora-cyan: #06B6D4;
+  --color-aurora-magenta: #D946EF;
+  --color-aurora-blue: #3B82F6;
+  --color-cta-green: #22C55E;
+
+  --font-heading: var(--font-outfit), sans-serif;
+  --font-body: var(--font-work-sans), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+
+  --animate-aurora-1: aurora1 12s ease-in-out infinite;
+  --animate-aurora-2: aurora2 15s ease-in-out infinite;
+  --animate-aurora-3: aurora3 13s ease-in-out infinite;
+  --animate-pulse-line: pulseLine 3s ease-in-out infinite;
+
+  @keyframes aurora1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.1); }
+    66% { transform: translate(-20px, 15px) scale(0.9); }
+  }
+
+  @keyframes aurora2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-25px, 20px) scale(1.15); }
+    66% { transform: translate(15px, -25px) scale(0.95); }
+  }
+
+  @keyframes aurora3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(20px, 25px) scale(1.05); }
+    66% { transform: translate(-30px, -10px) scale(1.1); }
+  }
+
+  @keyframes pulseLine {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-base);
+    color: #F8FAFC;
+    font-family: var(--font-body);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
