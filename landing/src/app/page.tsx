@@ -1,9 +1,25 @@
+import { Navbar } from "@/components/Navbar";
+import { Hero } from "@/components/Hero";
+import { TrustBar } from "@/components/TrustBar";
+import { Pipeline } from "@/components/Pipeline";
+import { Features } from "@/components/Features";
+import { TerminalShowcase } from "@/components/TerminalShowcase";
+import { QuickStart } from "@/components/QuickStart";
+import { Footer } from "@/components/Footer";
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-base">
-      <h1 className="text-4xl font-heading font-bold text-center pt-32">
-        Syntrix
-      </h1>
-    </main>
+    <>
+      <Navbar />
+      <main className="bg-base">
+        <Hero />
+        <TrustBar />
+        <Pipeline />
+        <Features />
+        <TerminalShowcase />
+        <QuickStart />
+      </main>
+      <Footer />
+    </>
   );
 }
