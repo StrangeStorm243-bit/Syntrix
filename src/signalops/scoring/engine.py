@@ -123,7 +123,7 @@ class ScoringEngine:
         # Pattern: "label == relevant"
         if "label ==" in condition:
             expected = condition.split("==")[1].strip().strip("'\"")
-            return judgment.get("label", "") == expected
+            return str(judgment.get("label", "")) == expected
 
         logger.warning("Unknown rule condition: %s", condition)
         return False

@@ -36,8 +36,8 @@ def list_plugins_cmd(ctx: click.Context) -> None:
     ep_plugins = ScoringEngine.load_from_entry_points()
     if ep_plugins:
         console.print(f"\n[cyan]Entry-point plugins: {len(ep_plugins)}")
-        for p in ep_plugins:
-            console.print(f"  {p.name} v{p.version}")
+        for ep in ep_plugins:
+            console.print(f"  {ep.name} v{ep.version}")
     else:
         console.print("\n[dim]No entry-point plugins installed.")
 

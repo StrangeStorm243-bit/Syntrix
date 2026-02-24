@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from signalops.config.schema import ICPConfig, ProjectConfig
+from signalops.scoring.engine import ScoringEngine
 from signalops.storage.database import (
     Judgment as JudgmentRow,
 )
@@ -114,10 +115,8 @@ class ScorerStage:
         }
         return engine.score(post_dict, judgment_dict, config_dict)
 
-    def _get_engine(self, config: ProjectConfig) -> Any:
+    def _get_engine(self, config: ProjectConfig) -> ScoringEngine:
         """Build a ScoringEngine for the given config."""
-        from signalops.scoring.engine import ScoringEngine
-
         return ScoringEngine()
 
     def _post_to_dict(self, post: NormalizedPost) -> dict[str, Any]:
