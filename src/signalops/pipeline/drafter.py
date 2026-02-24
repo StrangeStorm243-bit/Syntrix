@@ -22,6 +22,12 @@ from signalops.storage.database import (
     Score as ScoreRow,
 )
 
+# Platform-specific reply character limits
+PLATFORM_CHAR_LIMITS: dict[str, int] = {
+    "x": 280,
+    "linkedin": 1300,
+}
+
 
 class DrafterStage:
     """Pipeline stage that generates reply drafts for top-scored leads."""
