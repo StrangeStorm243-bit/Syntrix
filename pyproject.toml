@@ -30,6 +30,7 @@ dependencies = [
     "alembic>=1.13",
     "httpx>=0.27",
     "litellm>=1.55",
+    "langfuse>=2.50",
     "python-dotenv>=1.0",
     "redis>=5.0",
 ]
@@ -49,6 +50,9 @@ dev = [
     "respx>=0.21",
     "types-PyYAML>=6.0",
     "scikit-learn>=1.4",
+]
+argilla = [
+    "argilla>=2.0",
 ]
 docs = [
     "mkdocs-material>=9.5",
@@ -78,6 +82,10 @@ module = [
     "litellm.*",
     "scipy",
     "scipy.*",
+    "langfuse",
+    "langfuse.*",
+    "argilla",
+    "argilla.*",
 ]
 ignore_missing_imports = true
 

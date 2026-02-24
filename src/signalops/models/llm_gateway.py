@@ -8,6 +8,23 @@ from typing import Any
 
 import litellm
 
+try:
+    from langfuse.decorators import langfuse_context, observe
+
+    _HAS_LANGFUSE = True
+except ImportError:
+    _HAS_LANGFUSE = False
+    langfuse_context = None  # noqa: N816
+
+    def observe(**_kwargs: Any) -> Any:  # noqa: N802
+        """No-op decorator when langfuse is not installed."""
+
+        def decorator(func: Any) -> Any:
+            return func
+
+        return decorator
+
+
 logger = logging.getLogger(__name__)
 
 # Disable LiteLLM's verbose logging
@@ -37,6 +54,7 @@ class LLMGateway:
         self._temperature = temperature
         self._max_tokens = max_tokens
 
+    @observe(as_type="generation")  # type: ignore[untyped-decorator]
     def complete(
         self,
         system_prompt: str,
@@ -51,6 +69,12 @@ class LLMGateway:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ]
+
+        if _HAS_LANGFUSE:
+            langfuse_context.update_current_observation(
+                model=model,
+                metadata={"temperature": temperature or self._temperature},
+            )
 
         response = litellm.completion(
             model=model,

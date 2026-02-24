@@ -8,6 +8,13 @@ from typing import TYPE_CHECKING, Any
 
 from signalops.models.judge_model import Judgment, RelevanceJudge
 
+try:
+    from langfuse.decorators import langfuse_context
+
+    _HAS_LANGFUSE = True
+except ImportError:
+    _HAS_LANGFUSE = False
+
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
@@ -35,6 +42,12 @@ class ABTestJudge(RelevanceJudge):
     def judge(self, post_text: str, author_bio: str, project_context: dict[str, Any]) -> Judgment:
         use_canary = random.random() < self._canary_pct  # noqa: S311
         judge = self._canary if use_canary else self._primary
+
+        if _HAS_LANGFUSE:
+            langfuse_context.update_current_trace(
+                tags=["ab-test", f"experiment:{self._experiment_id}"],
+                metadata={"model_variant": "canary" if use_canary else "primary"},
+            )
 
         start = time.perf_counter()
         result = judge.judge(post_text, author_bio, project_context)

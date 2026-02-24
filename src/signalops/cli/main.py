@@ -50,7 +50,9 @@ from signalops.cli.approve import queue_group  # noqa: E402
 from signalops.cli.collect import run_group  # noqa: E402
 from signalops.cli.correct import correct_cmd  # noqa: E402
 from signalops.cli.eval import eval_group  # noqa: E402
+from signalops.cli.experiment import experiment_group  # noqa: E402
 from signalops.cli.export import export_group  # noqa: E402
+from signalops.cli.model import model_group  # noqa: E402
 from signalops.cli.project import project_group  # noqa: E402
 from signalops.cli.stats import stats_cmd  # noqa: E402
 
@@ -61,6 +63,8 @@ cli.add_command(stats_cmd, "stats")
 cli.add_command(export_group, "export")
 cli.add_command(correct_cmd, "correct")
 cli.add_command(eval_group, "eval")
+cli.add_command(experiment_group, "experiment")
+cli.add_command(model_group, "model")
 
 if __name__ == "__main__":
     cli()
