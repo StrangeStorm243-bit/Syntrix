@@ -85,7 +85,9 @@ class RawPost(Base):
     raw_json = Column(JSON, nullable=False)
 
     normalized_post = relationship(
-        "NormalizedPost", back_populates="raw_post", uselist=False,
+        "NormalizedPost",
+        back_populates="raw_post",
+        uselist=False,
     )
 
     __table_args__ = (
@@ -125,16 +127,20 @@ class NormalizedPost(Base):
     urls = Column(JSON)
 
     raw_post = relationship(
-        "RawPost", back_populates="normalized_post",
+        "RawPost",
+        back_populates="normalized_post",
     )
     judgments = relationship(
-        "Judgment", back_populates="normalized_post",
+        "Judgment",
+        back_populates="normalized_post",
     )
     scores = relationship(
-        "Score", back_populates="normalized_post",
+        "Score",
+        back_populates="normalized_post",
     )
     drafts = relationship(
-        "Draft", back_populates="normalized_post",
+        "Draft",
+        back_populates="normalized_post",
     )
 
     __table_args__ = (
@@ -169,7 +175,8 @@ class Judgment(Base):
     experiment_id = Column(String(64))
 
     normalized_post = relationship(
-        "NormalizedPost", back_populates="judgments",
+        "NormalizedPost",
+        back_populates="judgments",
     )
 
     __table_args__ = (Index("ix_judgment_project_label", "project_id", "label"),)
@@ -191,7 +198,8 @@ class Score(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     normalized_post = relationship(
-        "NormalizedPost", back_populates="scores",
+        "NormalizedPost",
+        back_populates="scores",
     )
 
     __table_args__ = (Index("ix_score_project_total", "project_id", "total_score"),)
@@ -218,10 +226,12 @@ class Draft(Base):
     sent_post_id = Column(String(64))
 
     normalized_post = relationship(
-        "NormalizedPost", back_populates="drafts",
+        "NormalizedPost",
+        back_populates="drafts",
     )
     outcomes = relationship(
-        "Outcome", back_populates="draft",
+        "Outcome",
+        back_populates="draft",
     )
 
     __table_args__ = (Index("ix_draft_project_status", "project_id", "status"),)
@@ -241,7 +251,8 @@ class Outcome(Base):
     observed_at = Column(DateTime, server_default=func.now())
 
     draft = relationship(
-        "Draft", back_populates="outcomes",
+        "Draft",
+        back_populates="outcomes",
     )
 
 
