@@ -85,14 +85,19 @@ def run_all_cmd(ctx: click.Context) -> None:
     connector = XConnector(bearer_token=bearer_token, rate_limiter=rate_limiter)
 
     # Build LLM components
-    gateway = LLMGateway()
+    gateway = LLMGateway(
+        default_model=config.llm.judge_model,
+        fallback_models=config.llm.fallback_models,
+        temperature=config.llm.temperature,
+        max_tokens=config.llm.max_tokens,
+    )
     judge = LLMPromptJudge(
         gateway=gateway,
-        model=config.llm.get("judge_model", "claude-sonnet-4-6"),
+        model=config.llm.judge_model,
     )
     draft_generator = LLMDraftGenerator(
         gateway=gateway,
-        model=config.llm.get("draft_model", "claude-sonnet-4-6"),
+        model=config.llm.draft_model,
     )
 
     orchestrator = PipelineOrchestrator(

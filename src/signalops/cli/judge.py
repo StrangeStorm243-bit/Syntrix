@@ -29,9 +29,13 @@ def judge_cmd(ctx: click.Context) -> None:
     from signalops.models.llm_gateway import LLMGateway
     from signalops.pipeline.judge import JudgeStage
 
-    gateway = LLMGateway()
-    model_id = config.llm.get("judge_model", "claude-sonnet-4-6")
-    judge = LLMPromptJudge(gateway=gateway, model=model_id)
+    gateway = LLMGateway(
+        default_model=config.llm.judge_model,
+        fallback_models=config.llm.fallback_models,
+        temperature=config.llm.temperature,
+        max_tokens=config.llm.max_tokens,
+    )
+    judge = LLMPromptJudge(gateway=gateway, model=config.llm.judge_model)
     judge_stage = JudgeStage(judge=judge, db_session=session)
 
     if dry_run:

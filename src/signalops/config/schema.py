@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class QueryConfig(BaseModel):
@@ -93,6 +93,25 @@ class StreamConfig(BaseModel):
     backfill_minutes: int = 5
 
 
+class LLMConfig(BaseModel):
+    """LLM configuration — powered by LiteLLM."""
+
+    judge_model: str = "claude-sonnet-4-6"
+    draft_model: str = "claude-sonnet-4-6"
+    temperature: float = 0.3
+    max_tokens: int = 1024
+    fallback_models: list[str] = []
+    judge_fallback_model: str | None = None
+    max_judge_latency_ms: float = 5000
+
+
+class ExperimentConfig(BaseModel):
+    """A/B testing configuration."""
+
+    enabled: bool = False
+    default_canary_pct: float = 0.1
+
+
 class ProjectConfig(BaseModel):
     """Top-level project configuration loaded from project.yaml."""
 
@@ -110,4 +129,13 @@ class ProjectConfig(BaseModel):
     redis: RedisConfig = RedisConfig()
     stream: StreamConfig = StreamConfig()
     rate_limits: dict[str, Any] = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
-    llm: dict[str, Any] = {"judge_model": "claude-sonnet-4-6", "draft_model": "claude-sonnet-4-6"}
+    llm: LLMConfig = LLMConfig()
+    experiments: ExperimentConfig = ExperimentConfig()
+
+    @field_validator("llm", mode="before")
+    @classmethod
+    def _coerce_llm(cls, v: Any) -> Any:
+        """Backward compatibility: coerce raw dicts into LLMConfig."""
+        if isinstance(v, dict):
+            return LLMConfig(**v)
+        return v
