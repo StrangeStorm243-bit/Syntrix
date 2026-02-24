@@ -1,6 +1,7 @@
 """SQLAlchemy models and database session management."""
 
 import enum
+from typing import Any
 
 from sqlalchemy import (
     JSON,
@@ -19,7 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 
 
 class Base(DeclarativeBase):
@@ -83,6 +84,10 @@ class RawPost(Base):
     query_used = Column(Text)
     raw_json = Column(JSON, nullable=False)
 
+    normalized_post = relationship(
+        "NormalizedPost", back_populates="raw_post", uselist=False,
+    )
+
     __table_args__ = (
         UniqueConstraint("platform", "platform_id", "project_id", name="uq_raw_post_platform"),
         Index("ix_raw_post_project_collected", "project_id", "collected_at"),
@@ -119,6 +124,19 @@ class NormalizedPost(Base):
     mentions = Column(JSON)
     urls = Column(JSON)
 
+    raw_post = relationship(
+        "RawPost", back_populates="normalized_post",
+    )
+    judgments = relationship(
+        "Judgment", back_populates="normalized_post",
+    )
+    scores = relationship(
+        "Score", back_populates="normalized_post",
+    )
+    drafts = relationship(
+        "Draft", back_populates="normalized_post",
+    )
+
     __table_args__ = (
         Index("ix_norm_project_author", "project_id", "author_id"),
         Index("ix_norm_project_created", "project_id", "created_at"),
@@ -134,7 +152,7 @@ class Judgment(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     normalized_post_id = Column(Integer, ForeignKey("normalized_posts.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
-    label = Column(SAEnum(JudgmentLabel), nullable=False)  # type: ignore[var-annotated]
+    label: Column[Any] = Column(SAEnum(JudgmentLabel), nullable=False)
     confidence = Column(Float, nullable=False)
     reasoning = Column(Text)
     model_id = Column(String(128), nullable=False)
@@ -143,12 +161,16 @@ class Judgment(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     # Human correction (nullable — only set if human overrides)
-    human_label = Column(SAEnum(JudgmentLabel))  # type: ignore[var-annotated]
+    human_label: Column[Any] = Column(SAEnum(JudgmentLabel))
     human_corrected_at = Column(DateTime)
     human_reason = Column(Text)
 
     # A/B test experiment tracking (v0.3)
     experiment_id = Column(String(64))
+
+    normalized_post = relationship(
+        "NormalizedPost", back_populates="judgments",
+    )
 
     __table_args__ = (Index("ix_judgment_project_label", "project_id", "label"),)
 
@@ -168,6 +190,10 @@ class Score(Base):
     scoring_plugins = Column(JSON)  # List of plugin names + versions used
     created_at = Column(DateTime, server_default=func.now())
 
+    normalized_post = relationship(
+        "NormalizedPost", back_populates="scores",
+    )
+
     __table_args__ = (Index("ix_score_project_total", "project_id", "total_score"),)
 
 
@@ -185,11 +211,18 @@ class Draft(Base):
     tone = Column(String(64))
     template_used = Column(String(128))
     model_id = Column(String(128), nullable=False)
-    status = Column(SAEnum(DraftStatus), default=DraftStatus.PENDING)  # type: ignore[var-annotated]
+    status: Column[Any] = Column(SAEnum(DraftStatus), default=DraftStatus.PENDING)
     created_at = Column(DateTime, server_default=func.now())
     approved_at = Column(DateTime)
     sent_at = Column(DateTime)
     sent_post_id = Column(String(64))
+
+    normalized_post = relationship(
+        "NormalizedPost", back_populates="drafts",
+    )
+    outcomes = relationship(
+        "Outcome", back_populates="draft",
+    )
 
     __table_args__ = (Index("ix_draft_project_status", "project_id", "status"),)
 
@@ -203,9 +236,13 @@ class Outcome(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     draft_id = Column(Integer, ForeignKey("drafts.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
-    outcome_type = Column(SAEnum(OutcomeType), nullable=False)  # type: ignore[var-annotated]
+    outcome_type: Column[Any] = Column(SAEnum(OutcomeType), nullable=False)
     details = Column(JSON)
     observed_at = Column(DateTime, server_default=func.now())
+
+    draft = relationship(
+        "Draft", back_populates="outcomes",
+    )
 
 
 # ── Audit Logs ──

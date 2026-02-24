@@ -33,6 +33,11 @@ dependencies = [
     "langfuse>=2.50",
     "python-dotenv>=1.0",
     "redis>=5.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "python-jose[cryptography]>=3.3",
+    "python-multipart>=0.0.12",
+    "websockets>=13.0",
 ]
 
 [project.urls]
@@ -60,6 +65,7 @@ docs = [
 
 [project.scripts]
 signalops = "signalops.cli.main:cli"
+signalops-api = "signalops.api.app:main"
 
 [project.entry-points."signalops.scorers"]
 keyword_boost = "signalops.scoring.keyword_boost:KeywordBoostPlugin"
