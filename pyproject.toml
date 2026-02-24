@@ -58,6 +58,10 @@ docs = [
 [project.scripts]
 signalops = "signalops.cli.main:cli"
 
+[project.entry-points."signalops.scorers"]
+keyword_boost = "signalops.scoring.keyword_boost:KeywordBoostPlugin"
+account_age = "signalops.scoring.account_age:AccountAgePlugin"
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
