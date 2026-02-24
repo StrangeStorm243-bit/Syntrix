@@ -45,3 +45,21 @@ export function useQueryPerformance(projectId?: string) {
     queryFn: () => apiGet<QueryPerf[]>('/api/analytics/query-performance', params),
   });
 }
+
+interface PersonaEffectiveness {
+  tone: string;
+  template_used: string | null;
+  total_drafts: number;
+  approved_count: number;
+  rejected_count: number;
+  approval_rate: number;
+}
+
+export function usePersonaEffectiveness(projectId?: string) {
+  const params: Record<string, string> = {};
+  if (projectId) params.project_id = projectId;
+  return useQuery({
+    queryKey: ['analytics', 'persona-effectiveness', projectId],
+    queryFn: () => apiGet<PersonaEffectiveness[]>('/api/analytics/persona-effectiveness', params),
+  });
+}

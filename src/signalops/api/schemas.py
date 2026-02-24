@@ -182,3 +182,35 @@ class ExperimentResultsResponse(BaseModel):
     canary_count: int
     primary_avg_latency_ms: float | None
     canary_avg_latency_ms: float | None
+
+
+class ExperimentCreateRequest(BaseModel):
+    experiment_id: str
+    project_id: str | None = None
+    primary_model: str
+    canary_model: str
+    canary_pct: float = 0.1
+
+
+class SendPreviewItem(BaseModel):
+    draft_id: int
+    normalized_post_id: int
+    text_final: str
+    author_username: str | None
+    platform: str
+    platform_id: str
+
+
+class SendResult(BaseModel):
+    sent_count: int
+    failed_count: int
+    draft_ids: list[int]
+
+
+class PersonaEffectivenessRow(BaseModel):
+    tone: str
+    template_used: str | None
+    total_drafts: int
+    approved_count: int
+    rejected_count: int
+    approval_rate: float

@@ -10,6 +10,7 @@ from signalops.api.auth import require_api_key
 from signalops.api.deps import get_db
 from signalops.api.schemas import (
     ConversionFunnelStep,
+    PersonaEffectivenessRow,
     QueryPerformanceRow,
     ScoreDistributionBucket,
 )
@@ -122,6 +123,52 @@ def query_performance(
                 total_leads=total,
                 avg_score=round(float(row.avg_score or 0), 2),
                 relevant_pct=round(relevant / total * 100, 1) if total > 0 else 0.0,
+            )
+        )
+    return results
+
+
+@router.get("/persona-effectiveness", response_model=list[PersonaEffectivenessRow])
+def persona_effectiveness(
+    project_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    _api_key: str = Depends(require_api_key),
+) -> list[PersonaEffectivenessRow]:
+    """Draft approval rates by persona (tone / template)."""
+    query = db.query(
+        Draft.tone,
+        Draft.template_used,
+        func.count(Draft.id).label("total"),
+        func.sum(
+            case(
+                (Draft.status.in_([DraftStatus.APPROVED, DraftStatus.EDITED]), 1),
+                else_=0,
+            )
+        ).label("approved"),
+        func.sum(
+            case(
+                (Draft.status == DraftStatus.REJECTED, 1),
+                else_=0,
+            )
+        ).label("rejected"),
+    ).group_by(Draft.tone, Draft.template_used)
+
+    if project_id:
+        query = query.filter(Draft.project_id == project_id)
+
+    results: list[PersonaEffectivenessRow] = []
+    for row in query.all():
+        total = int(row.total) if row.total else 0
+        approved = int(row.approved) if row.approved else 0
+        rejected = int(row.rejected) if row.rejected else 0
+        results.append(
+            PersonaEffectivenessRow(
+                tone=str(row.tone or "default"),
+                template_used=str(row.template_used) if row.template_used else None,
+                total_drafts=total,
+                approved_count=approved,
+                rejected_count=rejected,
+                approval_rate=round(approved / total * 100, 1) if total > 0 else 0.0,
             )
         )
     return results

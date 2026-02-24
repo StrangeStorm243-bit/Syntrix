@@ -14,6 +14,8 @@ from signalops.api.schemas import (
     DraftRejectRequest,
     DraftResponse,
     PaginatedResponse,
+    SendPreviewItem,
+    SendResult,
 )
 from signalops.storage.database import (
     Draft,
@@ -169,3 +171,68 @@ def reject_draft(
     db.commit()
     db.refresh(draft)
     return _build_draft_response(draft, db)
+
+
+@router.post("/send-preview", response_model=list[SendPreviewItem])
+def send_preview(
+    project_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    _api_key: str = Depends(require_api_key),
+) -> list[SendPreviewItem]:
+    """Dry-run preview of drafts that would be sent."""
+    query = db.query(Draft).filter(Draft.status.in_([DraftStatus.APPROVED, DraftStatus.EDITED]))
+    if project_id:
+        query = query.filter(Draft.project_id == project_id)
+
+    items: list[SendPreviewItem] = []
+    for draft in query.all():
+        post = (
+            db.query(NormalizedPost).filter(NormalizedPost.id == draft.normalized_post_id).first()
+        )
+        items.append(
+            SendPreviewItem(
+                draft_id=int(draft.id),
+                normalized_post_id=int(draft.normalized_post_id),
+                text_final=str(draft.text_final or draft.text_generated),
+                author_username=post.author_username if post else None,  # type: ignore[arg-type]
+                platform=str(post.platform) if post else "unknown",
+                platform_id=str(post.platform_id) if post else "",
+            )
+        )
+    return items
+
+
+@router.post("/send", response_model=SendResult)
+def send_approved(
+    project_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+    _api_key: str = Depends(require_api_key),
+) -> SendResult:
+    """Send all approved/edited drafts.
+
+    Marks drafts as SENT and records sent_at timestamp.
+    Actual delivery is handled by the sender pipeline stage
+    which will be wired in Phase 3 integration.
+    """
+    query = db.query(Draft).filter(Draft.status.in_([DraftStatus.APPROVED, DraftStatus.EDITED]))
+    if project_id:
+        query = query.filter(Draft.project_id == project_id)
+
+    drafts = query.all()
+    sent_ids: list[int] = []
+    failed_count = 0
+
+    for draft in drafts:
+        try:
+            draft.status = DraftStatus.SENT  # type: ignore[assignment]
+            draft.sent_at = datetime.now(UTC)  # type: ignore[assignment]
+            sent_ids.append(int(draft.id))
+        except Exception:  # noqa: BLE001
+            failed_count += 1
+
+    db.commit()
+    return SendResult(
+        sent_count=len(sent_ids),
+        failed_count=failed_count,
+        draft_ids=sent_ids,
+    )

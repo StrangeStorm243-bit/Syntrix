@@ -60,3 +60,34 @@ export function useRejectDraft() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['queue'] }),
   });
 }
+
+interface SendPreviewItem {
+  draft_id: number;
+  normalized_post_id: number;
+  text_final: string;
+  author_username: string | null;
+  platform: string;
+  platform_id: string;
+}
+
+interface SendResult {
+  sent_count: number;
+  failed_count: number;
+  draft_ids: number[];
+}
+
+export function useSendPreview() {
+  return useQuery({
+    queryKey: ['queue', 'send-preview'],
+    queryFn: () => apiPost<SendPreviewItem[]>('/api/queue/send-preview'),
+    enabled: false, // only fetch on demand
+  });
+}
+
+export function useSendDrafts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost<SendResult>('/api/queue/send'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['queue'] }),
+  });
+}

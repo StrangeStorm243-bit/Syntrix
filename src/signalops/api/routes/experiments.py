@@ -7,7 +7,11 @@ from sqlalchemy.orm import Session
 
 from signalops.api.auth import require_api_key
 from signalops.api.deps import get_db
-from signalops.api.schemas import ExperimentResponse, ExperimentResultsResponse
+from signalops.api.schemas import (
+    ExperimentCreateRequest,
+    ExperimentResponse,
+    ExperimentResultsResponse,
+)
 
 router = APIRouter()
 
@@ -54,6 +58,68 @@ def list_experiments(
     return results
 
 
+@router.post("", response_model=ExperimentResponse)
+def create_experiment(
+    body: ExperimentCreateRequest,
+    db: Session = Depends(get_db),
+    _api_key: str = Depends(require_api_key),
+) -> ExperimentResponse:
+    """Create a new A/B experiment."""
+    from fastapi import HTTPException
+    from sqlalchemy import inspect as sa_inspect
+    from sqlalchemy import text
+
+    inspector = sa_inspect(db.get_bind())
+    if "ab_experiments" not in inspector.get_table_names():
+        raise HTTPException(
+            status_code=501,
+            detail="Experiments table not available — merge T2 first",
+        )
+
+    # Check for duplicate experiment_id
+    existing = db.execute(
+        text("SELECT id FROM ab_experiments WHERE experiment_id = :eid"),
+        {"eid": body.experiment_id},
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Experiment ID already exists")
+
+    db.execute(
+        text(
+            "INSERT INTO ab_experiments "
+            "(experiment_id, project_id, primary_model, canary_model, canary_pct, status) "
+            "VALUES (:eid, :pid, :pm, :cm, :cp, 'active')"
+        ),
+        {
+            "eid": body.experiment_id,
+            "pid": body.project_id,
+            "pm": body.primary_model,
+            "cm": body.canary_model,
+            "cp": body.canary_pct,
+        },
+    )
+    db.commit()
+
+    row = db.execute(
+        text("SELECT * FROM ab_experiments WHERE experiment_id = :eid"),
+        {"eid": body.experiment_id},
+    ).first()
+    if not row:
+        raise HTTPException(status_code=500, detail="Failed to create experiment")
+    mapping = row._mapping
+    return ExperimentResponse(
+        id=int(mapping["id"]),
+        experiment_id=str(mapping["experiment_id"]),
+        project_id=mapping.get("project_id"),
+        primary_model=str(mapping["primary_model"]),
+        canary_model=str(mapping["canary_model"]),
+        canary_pct=float(mapping["canary_pct"]),
+        status=str(mapping["status"]),
+        started_at=mapping.get("started_at"),
+        ended_at=mapping.get("ended_at"),
+    )
+
+
 @router.get("/{experiment_id}", response_model=ExperimentResponse)
 def get_experiment(
     experiment_id: str,
@@ -75,6 +141,59 @@ def get_experiment(
     ).first()
     if not row:
         raise HTTPException(status_code=404, detail="Experiment not found")
+    mapping = row._mapping
+    return ExperimentResponse(
+        id=int(mapping["id"]),
+        experiment_id=str(mapping["experiment_id"]),
+        project_id=mapping.get("project_id"),
+        primary_model=str(mapping["primary_model"]),
+        canary_model=str(mapping["canary_model"]),
+        canary_pct=float(mapping["canary_pct"]),
+        status=str(mapping["status"]),
+        started_at=mapping.get("started_at"),
+        ended_at=mapping.get("ended_at"),
+    )
+
+
+@router.post("/{experiment_id}/stop", response_model=ExperimentResponse)
+def stop_experiment(
+    experiment_id: str,
+    db: Session = Depends(get_db),
+    _api_key: str = Depends(require_api_key),
+) -> ExperimentResponse:
+    """Stop a running experiment."""
+    from fastapi import HTTPException
+    from sqlalchemy import inspect as sa_inspect
+    from sqlalchemy import text
+
+    inspector = sa_inspect(db.get_bind())
+    if "ab_experiments" not in inspector.get_table_names():
+        raise HTTPException(status_code=404, detail="Experiments not available yet")
+
+    row = db.execute(
+        text("SELECT * FROM ab_experiments WHERE experiment_id = :eid"),
+        {"eid": experiment_id},
+    ).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    if str(row._mapping["status"]) != "active":
+        raise HTTPException(status_code=409, detail="Experiment is not active")
+
+    db.execute(
+        text(
+            "UPDATE ab_experiments SET status = 'stopped', "
+            "ended_at = CURRENT_TIMESTAMP WHERE experiment_id = :eid"
+        ),
+        {"eid": experiment_id},
+    )
+    db.commit()
+
+    row = db.execute(
+        text("SELECT * FROM ab_experiments WHERE experiment_id = :eid"),
+        {"eid": experiment_id},
+    ).first()
+    if not row:
+        raise HTTPException(status_code=500, detail="Failed to reload experiment")
     mapping = row._mapping
     return ExperimentResponse(
         id=int(mapping["id"]),
