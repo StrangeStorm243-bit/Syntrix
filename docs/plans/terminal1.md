@@ -165,6 +165,8 @@ GET  /api/analytics/score-distribution   — Histogram of lead scores
 GET  /api/analytics/judge-accuracy       — Precision/recall from human corrections
 GET  /api/analytics/query-performance    — Which queries produce best leads
 GET  /api/analytics/persona-effectiveness — Draft approval rates by persona/template
+     (NOTE: derives persona from the `tone` and `template_used` columns on the drafts table;
+      there is no separate `persona_name` column)
 GET  /api/analytics/conversion-funnel    — Collected → Judged → Scored → Drafted → Sent → Outcome
 ```
 

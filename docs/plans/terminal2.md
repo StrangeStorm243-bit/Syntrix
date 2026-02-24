@@ -180,6 +180,30 @@ class LLMGateway:
 Keep `providers/__init__.py` as an empty package if needed for imports, or remove the
 entire `providers/` directory.
 
+### Step 0.2.1: LLMGateway Migration Checklist
+
+The new `LLMGateway.__init__` signature changes from
+`(anthropic_api_key, openai_api_key, default_model)` to
+`(default_model, fallback_models, temperature, max_tokens)`.
+
+**All call sites that construct `LLMGateway()` and must be updated:**
+
+| File | Line | Current Usage |
+|------|------|---------------|
+| `src/signalops/cli/eval.py` | 41 | `gateway = LLMGateway()` |
+| `src/signalops/cli/eval.py` | 77 | `gateway = LLMGateway()` |
+| `src/signalops/cli/draft.py` | 32 | `gateway = LLMGateway()` |
+| `src/signalops/cli/collect.py` | 88 | `gateway = LLMGateway()` |
+| `src/signalops/cli/judge.py` | 32 | `gateway = LLMGateway()` |
+
+**Migration steps per call site:**
+1. Remove any `anthropic_api_key` / `openai_api_key` keyword args (LiteLLM reads
+   `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` from env automatically)
+2. The bare `LLMGateway()` calls above happen to work as-is because the old constructor
+   also had default values — but verify each site does not pass positional API key args
+3. If the call site extracted `config.llm` dict keys, update to use `LLMConfig` attrs
+   (e.g., `config.llm.judge_model` instead of `config.llm.get("judge_model", ...)`)
+
 ### Step 0.3: Update Config
 
 **Update `src/signalops/config/schema.py`:**
@@ -386,8 +410,23 @@ class ProjectConfig(BaseModel):
 ```
 
 > **Note:** Changing `llm` from `dict[str, Any]` to `LLMConfig` is a **breaking change** for
-> existing project YAML files. Add backward compatibility in the config loader:
-> if `llm` is a dict, construct `LLMConfig` from it.
+> existing project YAML files. Add a Pydantic `field_validator` to `ProjectConfig` for
+> backward compatibility so raw dicts are coerced automatically:
+>
+> ```python
+> from pydantic import field_validator
+>
+> class ProjectConfig(BaseModel):
+>     # ... existing fields ...
+>     llm: LLMConfig = LLMConfig()
+>
+>     @field_validator("llm", mode="before")
+>     @classmethod
+>     def _coerce_llm(cls, v: Any) -> Any:
+>         if isinstance(v, dict):
+>             return LLMConfig(**v)
+>         return v
+> ```
 
 ### Step 4: Judge Factory
 
@@ -456,7 +495,7 @@ class ABResult(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     experiment_id = Column(String(64), ForeignKey("ab_experiments.experiment_id"), nullable=False)
-    judgment_id = Column(Integer, ForeignKey("judgments.id"), nullable=False)
+    judgment_id = Column(Integer, ForeignKey("judgments.id"), nullable=True)  # Nullable: set after judgment is persisted
     model_used = Column(String(256), nullable=False)
     latency_ms = Column(Float)
     created_at = Column(DateTime, server_default=func.now())
@@ -536,18 +575,25 @@ class ABTestJudge(RelevanceJudge):
             for item in items
         ]
 
-    def _record_result(self, judgment: Judgment, latency_ms: float) -> None:
-        """Store A/B test result for later analysis."""
+    def _record_result(self, judgment: Judgment, latency_ms: float) -> ABResult:
+        """Store A/B test result for later analysis.
+
+        judgment_id is left NULL here because the Judgment row hasn't been
+        persisted yet. The caller (JudgeStage) must call
+        `ab_result.judgment_id = judgment_row.id` after flushing the judgment,
+        then commit both together.
+        """
         from signalops.storage.database import ABResult
 
         result = ABResult(
             experiment_id=self._experiment_id,
-            judgment_id=0,  # Will be updated after judgment is persisted
+            judgment_id=None,  # Updated after judgment is persisted
             model_used=judgment.model_id,
             latency_ms=latency_ms,
         )
         if self._session:
             self._session.add(result)
+        return result
 
 
 def create_ab_test_judge(

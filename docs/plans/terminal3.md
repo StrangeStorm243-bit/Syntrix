@@ -984,23 +984,22 @@ class ScoringRule(BaseModel):
     boost: float                        # Score adjustment (-100 to +100)
     description: str = ""               # Human-readable explanation
 
-class ScoringConfig(BaseModel):
-    """Extended scoring configuration with plugins and rules."""
-    # Existing weights:
-    relevance_judgment: float = 0.35
-    author_authority: float = 0.25
-    engagement_signals: float = 0.15
-    recency: float = 0.15
-    intent_strength: float = 0.10
-    # New fields:
+class ScoringConfig(ScoringWeights):
+    """Extended scoring configuration with plugins and rules.
+
+    Inherits all weight fields from ScoringWeights (relevance_judgment,
+    author_authority, engagement_signals, recency, intent_strength) so
+    existing YAML files with just the weight fields still load.
+    """
+    # New fields (weights are inherited from ScoringWeights):
     custom_rules: list[ScoringRule] = []
     plugins: list[str] = []            # Additional plugin module paths
     keyword_boost: dict[str, Any] = {} # keyword_boost plugin config
     account_age: dict[str, Any] = {}   # account_age plugin config
 ```
 
-> **Note:** `ScoringConfig` extends `ScoringWeights`. We rename the class but keep
-> backward compatibility — existing YAML files with just the weight fields still load.
+> **Note:** `ScoringConfig` inherits from `ScoringWeights` — the existing weight fields
+> are inherited, not duplicated. Existing YAML files with just the weight fields still load.
 
 ### Step 10: Example Config
 
@@ -1039,17 +1038,58 @@ scoring:
 **Refactor `src/signalops/pipeline/scorer.py`:**
 - Replace inline scoring logic with `ScoringEngine.score()` call
 - Convert `NormalizedPost` + `JudgmentRow` to dict format for plugin interface
-- Store `scoring_plugins` JSON column with plugin list used
+- Add `scoring_plugins = Column(JSON)` to the `Score` ORM model in `database.py`
+  (matches the `ALTER TABLE scores ADD COLUMN scoring_plugins JSON` in the master design)
+- Store the list of plugin names + versions used for each score
 - Maintain backward compatibility: if no plugins configured, use defaults
 
 ```python
-# Updated ScorerStage.compute_score:
-def compute_score(self, post, judgment, config):
+# Updated ScorerStage.compute_score with full type annotations and helper stubs:
+
+def compute_score(
+    self,
+    post: NormalizedPost,
+    judgment: Judgment,
+    config: ProjectConfig,
+) -> tuple[float, dict[str, Any]]:
+    """Score a lead using the plugin-based ScoringEngine."""
     engine = self._get_engine(config)
     post_dict = self._post_to_dict(post)
     judgment_dict = self._judgment_to_dict(judgment)
-    config_dict = config.scoring.model_dump() if hasattr(config.scoring, 'model_dump') else {}
+    config_dict: dict[str, Any] = (
+        config.scoring.model_dump() if hasattr(config.scoring, "model_dump") else {}
+    )
     return engine.score(post_dict, judgment_dict, config_dict)
+
+def _get_engine(self, config: ProjectConfig) -> ScoringEngine:
+    """Build or return a cached ScoringEngine for the given config."""
+    from signalops.scoring.engine import ScoringEngine
+
+    # TODO: cache engine per config fingerprint
+    return ScoringEngine()
+
+def _post_to_dict(self, post: NormalizedPost) -> dict[str, Any]:
+    """Convert ORM NormalizedPost to dict for plugin interface."""
+    return {
+        "text_cleaned": post.text_cleaned,
+        "author_username": post.author_username,
+        "author_display_name": post.author_display_name,
+        "author_followers": post.author_followers,
+        "author_verified": post.author_verified,
+        "likes": post.likes,
+        "replies": post.replies,
+        "retweets": post.retweets,
+        "views": post.views,
+        "created_at": post.created_at,
+    }
+
+def _judgment_to_dict(self, judgment: Judgment) -> dict[str, Any]:
+    """Convert ORM Judgment to dict for plugin interface."""
+    return {
+        "label": judgment.label.value if judgment.label else "maybe",
+        "confidence": float(judgment.confidence or 0),
+        "reasoning": judgment.reasoning or "",
+    }
 ```
 
 ### Step 12: CLI for Batch Collection
@@ -1089,8 +1129,7 @@ src/signalops/scoring/base.py               # ScoringPlugin ABC
 src/signalops/scoring/weighted.py            # 5 default plugins (extracted from scorer.py)
 src/signalops/scoring/keyword_boost.py       # Keyword boost plugin
 src/signalops/scoring/account_age.py         # Account age plugin
-src/signalops/scoring/engine.py              # ScoringEngine orchestrator
-src/signalops/scoring/rules.py               # Rule condition evaluator (if extracted)
+src/signalops/scoring/engine.py              # ScoringEngine orchestrator (includes rule evaluation)
 tests/unit/test_batch.py
 tests/unit/test_scoring_engine.py
 tests/unit/test_scoring_plugins.py

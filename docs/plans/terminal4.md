@@ -64,7 +64,13 @@ class Platform(enum.Enum):
             ) from None
 ```
 
-Also add platform validation to the `RawPost` dataclass:
+Also add platform validation to the `RawPost` **dataclass** in `connectors/base.py`:
+
+> **Note:** There are two `RawPost` types in the codebase:
+> 1. `connectors/base.py:RawPost` — a `@dataclass` used as the connector return type
+>    (this is the one modified here to add platform validation)
+> 2. `storage/database.py:RawPost` — a SQLAlchemy ORM model for the `raw_posts` table
+>    (not modified by T4 — it already has a `platform` string column)
 
 ```python
 @dataclass
@@ -99,7 +105,12 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectorFactory:
-    """Creates and caches connector instances based on platform config."""
+    """Creates and caches connector instances based on platform config.
+
+    WARNING: _instances is a class-level mutable dict shared across all tests.
+    Every test that uses ConnectorFactory MUST call ConnectorFactory.clear_cache()
+    in setup (see test_connector_factory.py setup_method for the pattern).
+    """
 
     _instances: dict[str, Connector] = {}
 
