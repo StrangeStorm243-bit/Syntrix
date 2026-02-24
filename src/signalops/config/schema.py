@@ -47,6 +47,37 @@ class ScoringWeights(BaseModel):
     intent_strength: float = 0.10
 
 
+class ScoringRule(BaseModel):
+    """A config-driven scoring rule (boost/penalty)."""
+
+    name: str
+    condition: str
+    boost: float
+    description: str = ""
+
+
+class ScoringConfig(ScoringWeights):
+    """Extended scoring configuration with plugins and rules.
+
+    Inherits all weight fields from ScoringWeights so existing YAML
+    files with just the weight fields still load.
+    """
+
+    custom_rules: list[ScoringRule] = []
+    plugins: list[str] = []  # Additional plugin module paths
+    keyword_boost: dict[str, Any] = {}
+    account_age: dict[str, Any] = {}
+
+
+class BatchConfig(BaseModel):
+    """Batch processing configuration."""
+
+    enabled: bool = False
+    concurrency: int = 3
+    retry_failed: bool = True
+    max_retries: int = 2
+
+
 class PersonaConfig(BaseModel):
     """Bot persona for outreach replies."""
 
@@ -103,7 +134,8 @@ class ProjectConfig(BaseModel):
     queries: list[QueryConfig]
     icp: ICPConfig = ICPConfig()
     relevance: RelevanceRubric
-    scoring: ScoringWeights = ScoringWeights()
+    scoring: ScoringConfig = ScoringConfig()
+    batch: BatchConfig = BatchConfig()
     persona: PersonaConfig
     templates: list[TemplateConfig] = []
     notifications: NotificationConfig = NotificationConfig()

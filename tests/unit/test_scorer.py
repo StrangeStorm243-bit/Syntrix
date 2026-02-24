@@ -8,7 +8,7 @@ from signalops.config.schema import (
     ProjectConfig,
     QueryConfig,
     RelevanceRubric,
-    ScoringWeights,
+    ScoringConfig,
 )
 from signalops.pipeline.scorer import ScorerStage
 from signalops.storage.database import JudgmentLabel
@@ -46,7 +46,7 @@ def make_judgment(label="relevant", confidence=0.85):
 
 
 def make_config(**weight_overrides):
-    weights = ScoringWeights(**weight_overrides) if weight_overrides else ScoringWeights()
+    weights = ScoringConfig(**weight_overrides) if weight_overrides else ScoringConfig()
     return ProjectConfig(
         project_id="test",
         project_name="Test",
@@ -132,7 +132,7 @@ def test_negative_followers_no_crash():
 
 
 def test_weights_sum_to_one():
-    w = ScoringWeights()
+    w = ScoringConfig()
     total = (
         w.relevance_judgment
         + w.author_authority
