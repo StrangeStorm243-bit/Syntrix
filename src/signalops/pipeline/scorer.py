@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from signalops.config.schema import ICPConfig, ProjectConfig
+from signalops.scoring.engine import ScoringEngine
 from signalops.storage.database import (
     Judgment as JudgmentRow,
 )
@@ -48,7 +49,7 @@ class ScorerStage:
             .all()
         )
 
-        stats = {
+        stats: dict[str, Any] = {
             "scored_count": 0,
             "avg_score": 0.0,
             "max_score": 0.0,
@@ -56,6 +57,9 @@ class ScorerStage:
             "above_70_count": 0,
         }
         total_score_sum = 0.0
+
+        engine = self._get_engine(config)
+        plugin_info = [{"name": p["name"], "version": p["version"]} for p in engine.list_plugins()]
 
         for post, judgment in rows:
             total_score, components = self.compute_score(post, judgment, config)
@@ -73,7 +77,8 @@ class ScorerStage:
                     project_id=project_id,
                     total_score=total_score,
                     components=components,
-                    scoring_version="v1",
+                    scoring_version="v2",
+                    scoring_plugins=plugin_info,
                 )
                 self._session.add(row)
 
@@ -93,32 +98,51 @@ class ScorerStage:
         judgment: JudgmentRow,
         config: ProjectConfig,
     ) -> tuple[float, dict[str, Any]]:
-        """Returns (total_score, components_dict). Total is 0-100."""
-        weights = config.scoring
+        """Score a lead using the plugin-based ScoringEngine."""
+        engine = self._get_engine(config)
+        post_dict = self._post_to_dict(post)
+        judgment_dict = self._judgment_to_dict(judgment)
+        config_dict: dict[str, Any] = (
+            config.scoring.model_dump() if hasattr(config.scoring, "model_dump") else {}
+        )
+        # Map weight fields into a "weights" sub-dict for plugin lookup
+        config_dict["weights"] = {
+            "relevance_judgment": config.scoring.relevance_judgment,
+            "author_authority": config.scoring.author_authority,
+            "engagement_signals": config.scoring.engagement_signals,
+            "recency": config.scoring.recency,
+            "intent_strength": config.scoring.intent_strength,
+        }
+        return engine.score(post_dict, judgment_dict, config_dict)
 
-        relevance_score = self._score_relevance(judgment)
-        authority_score = self._score_authority(post, config.icp)
-        engagement_score = self._score_engagement(post)
-        recency_score = self._score_recency(post.created_at)  # type: ignore[arg-type]
-        intent_score = self._score_intent(str(post.text_cleaned or ""))
+    def _get_engine(self, config: ProjectConfig) -> ScoringEngine:
+        """Build a ScoringEngine for the given config."""
+        return ScoringEngine()
 
-        components = {
-            "relevance_judgment": relevance_score,
-            "author_authority": authority_score,
-            "engagement_signals": engagement_score,
-            "recency": recency_score,
-            "intent_strength": intent_score,
+    def _post_to_dict(self, post: NormalizedPost) -> dict[str, Any]:
+        """Convert ORM NormalizedPost to dict for plugin interface."""
+        return {
+            "text_cleaned": post.text_cleaned,
+            "author_username": post.author_username,
+            "author_display_name": post.author_display_name,
+            "author_followers": post.author_followers,
+            "author_verified": post.author_verified,
+            "likes": post.likes,
+            "replies": post.replies,
+            "retweets": post.retweets,
+            "views": post.views,
+            "created_at": post.created_at,
         }
 
-        total = (
-            relevance_score * weights.relevance_judgment
-            + authority_score * weights.author_authority
-            + engagement_score * weights.engagement_signals
-            + recency_score * weights.recency
-            + intent_score * weights.intent_strength
-        )
+    def _judgment_to_dict(self, judgment: JudgmentRow) -> dict[str, Any]:
+        """Convert ORM Judgment to dict for plugin interface."""
+        return {
+            "label": judgment.label.value if judgment.label else "maybe",
+            "confidence": float(judgment.confidence or 0),
+            "reasoning": judgment.reasoning or "",
+        }
 
-        return min(max(total, 0.0), 100.0), components
+    # ── Legacy methods kept for backward compatibility with existing tests ──
 
     def _score_relevance(self, judgment: JudgmentRow) -> float:
         """confidence * label_multiplier."""

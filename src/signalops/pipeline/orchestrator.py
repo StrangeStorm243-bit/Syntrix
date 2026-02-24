@@ -62,10 +62,38 @@ class PipelineOrchestrator:
         return results
 
     def _run_collect(self, config: ProjectConfig, dry_run: bool) -> dict[str, Any]:
+        if config.batch.enabled:
+            return self._run_batch_collect(config, dry_run)
+
         from signalops.pipeline.collector import CollectorStage
 
         collector = CollectorStage(connector=self.connector, db_session=self.session)
         return collector.run(config=config, dry_run=dry_run)
+
+    def _run_batch_collect(self, config: ProjectConfig, dry_run: bool) -> dict[str, Any]:
+        import os
+
+        from signalops.connectors.rate_limiter import RateLimiter
+        from signalops.pipeline.batch import run_batch_sync
+
+        bearer_token = os.environ.get("X_BEARER_TOKEN", "")
+        rate_limiter = RateLimiter(max_requests=55, window_seconds=900)
+
+        result = run_batch_sync(
+            bearer_token=bearer_token,
+            db_session=self.session,
+            rate_limiter=rate_limiter,
+            config=config,
+            concurrency=config.batch.concurrency,
+            dry_run=dry_run,
+        )
+        return {
+            "total_queries": result.total_queries,
+            "successful_queries": result.successful_queries,
+            "failed_queries": result.failed_queries,
+            "total_tweets_found": result.total_tweets_found,
+            "total_new_tweets": result.total_new_tweets,
+        }
 
     def _run_normalize(self, config: ProjectConfig, dry_run: bool) -> dict[str, Any]:
         from signalops.pipeline.normalizer import NormalizerStage

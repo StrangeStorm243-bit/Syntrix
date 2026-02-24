@@ -162,6 +162,7 @@ class Score(Base):
     total_score = Column(Float, nullable=False)
     components = Column(JSON, nullable=False)
     scoring_version = Column(String(64), nullable=False)
+    scoring_plugins = Column(JSON)  # List of plugin names + versions used
     created_at = Column(DateTime, server_default=func.now())
 
     __table_args__ = (Index("ix_score_project_total", "project_id", "total_score"),)

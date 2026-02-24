@@ -11,8 +11,12 @@ def run_group() -> None:
 
 
 @run_group.command("collect")
+@click.option("--batch", is_flag=True, default=False, help="Use async batch collection mode")
+@click.option(
+    "--concurrency", type=int, default=None, help="Override batch concurrency (default: 3)"
+)
 @click.pass_context
-def collect_cmd(ctx: click.Context) -> None:
+def collect_cmd(ctx: click.Context, batch: bool, concurrency: int | None) -> None:
     """Collect tweets matching project queries."""
     from signalops.cli.project import load_active_config
     from signalops.config.defaults import DEFAULT_DB_URL
@@ -26,29 +30,57 @@ def collect_cmd(ctx: click.Context) -> None:
     init_db(engine)
     session = get_session(engine)
 
-    # Lazy imports for pipeline stages
     import os
 
-    from rich.progress import Progress
-
     from signalops.connectors.rate_limiter import RateLimiter
-    from signalops.connectors.x_api import XConnector
-    from signalops.pipeline.collector import CollectorStage
 
     bearer_token = os.environ.get("X_BEARER_TOKEN", "")
     rate_limiter = RateLimiter(max_requests=55, window_seconds=900)
-    connector = XConnector(bearer_token=bearer_token, rate_limiter=rate_limiter)
 
-    collector = CollectorStage(connector=connector, db_session=session)
-    with Progress() as progress:
-        task = progress.add_task("Collecting tweets...", total=len(config.queries))
-        result = collector.run(config=config, dry_run=dry_run)
-        progress.update(task, completed=len(config.queries))
+    use_batch = batch or config.batch.enabled
 
-    console.print(
-        f"[green]Collected {result.get('total_new', 0)} tweets "
-        f"({result.get('total_skipped', 0)} duplicates skipped)"
-    )
+    if use_batch:
+        from signalops.pipeline.batch import run_batch_sync
+
+        actual_concurrency = concurrency or config.batch.concurrency
+        console.print(f"[cyan]Batch mode: {actual_concurrency} concurrent queries")
+        result = run_batch_sync(
+            bearer_token=bearer_token,
+            db_session=session,
+            rate_limiter=rate_limiter,
+            config=config,
+            concurrency=actual_concurrency,
+            dry_run=dry_run,
+        )
+        console.print(
+            f"[green]Batch complete: {result.successful_queries}/{result.total_queries} queries, "
+            f"{result.total_new_tweets} new tweets ({result.total_tweets_found} found)"
+        )
+        for qr in result.query_results:
+            if qr.error:
+                console.print(f"  [red]{qr.query_label}: ERROR — {qr.error}")
+            else:
+                console.print(
+                    f"  [green]{qr.query_label}: {qr.new_tweets} new / {qr.tweets_found} found"
+                )
+    else:
+        from rich.progress import Progress
+
+        from signalops.connectors.x_api import XConnector
+        from signalops.pipeline.collector import CollectorStage
+
+        connector = XConnector(bearer_token=bearer_token, rate_limiter=rate_limiter)
+        collector = CollectorStage(connector=connector, db_session=session)
+        with Progress() as progress:
+            task = progress.add_task("Collecting tweets...", total=len(config.queries))
+            result_dict = collector.run(config=config, dry_run=dry_run)
+            progress.update(task, completed=len(config.queries))
+
+        console.print(
+            f"[green]Collected {result_dict.get('total_new', 0)} tweets "
+            f"({result_dict.get('total_skipped', 0)} duplicates skipped)"
+        )
+
     session.close()
 
 

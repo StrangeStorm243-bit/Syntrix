@@ -52,6 +52,7 @@ from signalops.cli.correct import correct_cmd  # noqa: E402
 from signalops.cli.eval import eval_group  # noqa: E402
 from signalops.cli.export import export_group  # noqa: E402
 from signalops.cli.project import project_group  # noqa: E402
+from signalops.cli.scoring import scoring_group  # noqa: E402
 from signalops.cli.stats import stats_cmd  # noqa: E402
 
 cli.add_command(project_group, "project")
@@ -61,6 +62,7 @@ cli.add_command(stats_cmd, "stats")
 cli.add_command(export_group, "export")
 cli.add_command(correct_cmd, "correct")
 cli.add_command(eval_group, "eval")
+cli.add_command(scoring_group, "scoring")
 
 if __name__ == "__main__":
     cli()
