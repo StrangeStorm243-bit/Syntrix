@@ -2,10 +2,28 @@
 
 from __future__ import annotations
 
+import enum
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+
+
+class Platform(enum.Enum):
+    """Supported social media platforms."""
+
+    X = "x"
+    LINKEDIN = "linkedin"
+    SOCIALDATA = "socialdata"
+
+    @classmethod
+    def from_string(cls, value: str) -> Platform:
+        """Case-insensitive platform lookup."""
+        try:
+            return cls(value.lower())
+        except ValueError:
+            valid = ", ".join(p.value for p in cls)
+            raise ValueError(f"Unknown platform '{value}'. Supported platforms: {valid}") from None
 
 
 @dataclass
@@ -27,6 +45,10 @@ class RawPost:
     metrics: dict[str, Any] = field(default_factory=dict)
     entities: dict[str, Any] = field(default_factory=dict)
     raw_json: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Validate platform is a known value."""
+        Platform.from_string(self.platform)  # Raises if unknown
 
 
 class Connector(ABC):

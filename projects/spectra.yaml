@@ -5,15 +5,31 @@ description: >
   security issues, and performance problems before they ship.
 product_url: "https://spectra.dev"
 
+platforms:
+  x:
+    enabled: true
+    search_type: recent
+  linkedin:
+    enabled: false
+    post_types: ["posts", "articles"]
+    company_pages: ["spectra-ai"]
+
 queries:
   - text: '"code review" (slow OR painful OR annoying OR "takes forever") -is:retweet lang:en'
     label: "Code review pain points"
+    platform: x
   - text: '"pull request" (bugs OR "missed bug" OR "slipped through") -is:retweet lang:en'
     label: "Bugs slipping through PRs"
+    platform: x
   - text: '("looking for" OR "anyone recommend") ("code review tool" OR "PR automation") -is:retweet lang:en'
     label: "Active tool search"
+    platform: x
   - text: '(sonarqube OR codeclimate OR "code rabbit" OR snyk) (slow OR expensive OR "switching from") -is:retweet lang:en'
     label: "Competitor dissatisfaction"
+    platform: x
+  - text: 'code review automation'
+    label: "Code review pain (LinkedIn)"
+    platform: linkedin
 
 icp:
   min_followers: 200

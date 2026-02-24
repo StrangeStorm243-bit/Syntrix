@@ -14,6 +14,7 @@ class QueryConfig(BaseModel):
     label: str  # Human-readable name
     enabled: bool = True
     max_results_per_run: int = 100
+    platform: str = "x"  # Target platform for this query
 
 
 class ICPConfig(BaseModel):
@@ -93,6 +94,33 @@ class StreamConfig(BaseModel):
     backfill_minutes: int = 5
 
 
+class PlatformConfig(BaseModel):
+    """Configuration for a single platform connector."""
+
+    enabled: bool = True
+
+
+class XPlatformConfig(PlatformConfig):
+    """X/Twitter specific config."""
+
+    search_type: str = "recent"  # "recent" or "all" (Academic tier)
+    include_retweets: bool = False
+
+
+class LinkedInPlatformConfig(PlatformConfig):
+    """LinkedIn specific config."""
+
+    post_types: list[str] = ["articles", "posts"]  # Types to collect
+    company_pages: list[str] = []  # Company pages to monitor
+
+
+class PlatformsConfig(BaseModel):
+    """Multi-platform configuration."""
+
+    x: XPlatformConfig = XPlatformConfig()
+    linkedin: LinkedInPlatformConfig = LinkedInPlatformConfig(enabled=False)
+
+
 class ProjectConfig(BaseModel):
     """Top-level project configuration loaded from project.yaml."""
 
@@ -109,5 +137,6 @@ class ProjectConfig(BaseModel):
     notifications: NotificationConfig = NotificationConfig()
     redis: RedisConfig = RedisConfig()
     stream: StreamConfig = StreamConfig()
+    platforms: PlatformsConfig = PlatformsConfig()
     rate_limits: dict[str, Any] = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
     llm: dict[str, Any] = {"judge_model": "claude-sonnet-4-6", "draft_model": "claude-sonnet-4-6"}

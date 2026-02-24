@@ -12,7 +12,7 @@ from signalops.config.schema import (
     RelevanceRubric,
 )
 from signalops.models.draft_model import Draft, LLMDraftGenerator
-from signalops.pipeline.drafter import DrafterStage
+from signalops.pipeline.drafter import PLATFORM_CHAR_LIMITS, DrafterStage
 from signalops.storage.database import (
     Draft as DraftRow,
 )
@@ -350,3 +350,18 @@ def test_draft_stage_dry_run(db_session, sample_config):
     # No draft rows should be in the DB
     draft_count = db_session.query(DraftRow).count()
     assert draft_count == 0
+
+
+# ── Platform Char Limits Tests ──
+
+
+def test_platform_specific_char_limits():
+    """Drafter respects platform-specific character limits."""
+    assert PLATFORM_CHAR_LIMITS["x"] == 280
+    assert PLATFORM_CHAR_LIMITS["linkedin"] == 1300
+
+
+def test_platform_char_limits_has_all_platforms():
+    """All expected platforms have char limits defined."""
+    assert "x" in PLATFORM_CHAR_LIMITS
+    assert "linkedin" in PLATFORM_CHAR_LIMITS
