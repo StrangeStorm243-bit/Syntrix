@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from signalops.api.routes.analytics import router as analytics_router
 from signalops.api.routes.experiments import router as experiments_router
 from signalops.api.routes.leads import router as leads_router
+from signalops.api.routes.pipeline import router as pipeline_router
 from signalops.api.routes.projects import router as projects_router
 from signalops.api.routes.queue import router as queue_router
 from signalops.api.routes.stats import router as stats_router
@@ -63,6 +64,12 @@ def create_app(db_url: str | None = None) -> FastAPI:
     app.include_router(stats_router, prefix="/api/stats", tags=["stats"])
     app.include_router(analytics_router, prefix="/api/analytics", tags=["analytics"])
     app.include_router(experiments_router, prefix="/api/experiments", tags=["experiments"])
+    app.include_router(pipeline_router, prefix="/api/pipeline", tags=["pipeline"])
+
+    # WebSocket endpoint
+    from signalops.api.websocket import websocket_endpoint
+
+    app.websocket("/ws/pipeline")(websocket_endpoint)
 
     return app
 

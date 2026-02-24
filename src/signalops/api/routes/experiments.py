@@ -42,11 +42,14 @@ def list_experiments(
             ExperimentResponse(
                 id=int(mapping["id"]),
                 experiment_id=str(mapping["experiment_id"]),
-                project_id=mapping.get("project_id"),                primary_model=str(mapping["primary_model"]),
+                project_id=mapping.get("project_id"),
+                primary_model=str(mapping["primary_model"]),
                 canary_model=str(mapping["canary_model"]),
                 canary_pct=float(mapping["canary_pct"]),
                 status=str(mapping["status"]),
-                started_at=mapping.get("started_at"),                ended_at=mapping.get("ended_at"),            )
+                started_at=mapping.get("started_at"),
+                ended_at=mapping.get("ended_at"),
+            )
         )
     return results
 
@@ -76,11 +79,14 @@ def get_experiment(
     return ExperimentResponse(
         id=int(mapping["id"]),
         experiment_id=str(mapping["experiment_id"]),
-        project_id=mapping.get("project_id"),        primary_model=str(mapping["primary_model"]),
+        project_id=mapping.get("project_id"),
+        primary_model=str(mapping["primary_model"]),
         canary_model=str(mapping["canary_model"]),
         canary_pct=float(mapping["canary_pct"]),
         status=str(mapping["status"]),
-        started_at=mapping.get("started_at"),        ended_at=mapping.get("ended_at"),    )
+        started_at=mapping.get("started_at"),
+        ended_at=mapping.get("ended_at"),
+    )
 
 
 @router.get("/{experiment_id}/results", response_model=ExperimentResultsResponse)
