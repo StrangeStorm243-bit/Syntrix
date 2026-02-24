@@ -1,8 +1,12 @@
 """Tests for the normalizer stage helper functions."""
 
+from __future__ import annotations
+
 from signalops.pipeline.normalizer import (
+    NormalizerStage,
     clean_text,
     detect_language,
+    extract_entities_from_text,
     extract_hashtags,
     extract_mentions,
     extract_urls,
@@ -104,3 +108,93 @@ class TestDetectLanguage:
 
     def test_whitespace_returns_none(self):
         assert detect_language("   ", None) is None
+
+
+class TestExtractEntitiesFromText:
+    """Tests for text-based entity extraction (used by LinkedIn normalizer)."""
+
+    def test_extracts_hashtags(self) -> None:
+        hashtags, _, _ = extract_entities_from_text("Excited about #AI and #CodeReview")
+        assert hashtags == ["AI", "CodeReview"]
+
+    def test_extracts_mentions(self) -> None:
+        _, mentions, _ = extract_entities_from_text("Thanks @alice and @bob")
+        assert mentions == ["@alice", "@bob"]
+
+    def test_extracts_urls(self) -> None:
+        _, _, urls = extract_entities_from_text("Check https://example.com for details")
+        assert urls == ["https://example.com"]
+
+    def test_empty_text(self) -> None:
+        hashtags, mentions, urls = extract_entities_from_text("")
+        assert hashtags == []
+        assert mentions == []
+        assert urls == []
+
+
+class TestNormalizeLinkedInPost:
+    """Tests for NormalizerStage._normalize_linkedin_post."""
+
+    def test_normalize_linkedin_post(self, db_session: object) -> None:
+        """Normalizer handles LinkedIn post format."""
+        from signalops.storage.database import Project
+        from signalops.storage.database import RawPost as RawPostDB
+
+        # Insert project
+        project = Project(
+            id="test-linkedin",
+            name="Test LinkedIn",
+            config_path="projects/test.yaml",
+            config_hash="abc123",
+        )
+        db_session.add(project)  # type: ignore[union-attr]
+        db_session.commit()  # type: ignore[union-attr]
+
+        # Insert a LinkedIn raw post
+        raw_post = RawPostDB(
+            project_id="test-linkedin",
+            platform="linkedin",
+            platform_id="urn:li:share:123456",
+            query_used="code review automation",
+            raw_json={
+                "text": "Excited about #AI and our new code review automation! @spectra",
+                "author": {
+                    "name": "Jane Doe",
+                    "headline": "CTO at TechCo",
+                    "connections": 500,
+                    "is_premium": True,
+                },
+                "author_urn": "urn:li:person:789",
+                "published_at": "2026-02-20T10:00:00Z",
+                "reactions": 42,
+                "comments": 8,
+                "shares": 5,
+                "impressions": 1200,
+            },
+        )
+        db_session.add(raw_post)  # type: ignore[union-attr]
+        db_session.commit()  # type: ignore[union-attr]
+
+        stage = NormalizerStage()
+        result = stage.run(db_session, "test-linkedin")  # type: ignore[arg-type]
+
+        assert result["processed_count"] == 1
+        assert result["skipped_count"] == 0
+
+        from signalops.storage.database import NormalizedPost
+
+        normalized = (
+            db_session.query(NormalizedPost)  # type: ignore[union-attr]
+            .filter(NormalizedPost.project_id == "test-linkedin")
+            .first()
+        )
+        assert normalized is not None
+        assert normalized.platform == "linkedin"
+        assert normalized.platform_id == "urn:li:share:123456"
+        assert normalized.author_display_name == "Jane Doe"
+        assert normalized.author_followers == 500
+        assert normalized.likes == 42
+        assert normalized.replies == 8
+        assert normalized.retweets == 5
+        assert "AI" in normalized.hashtags
+        assert "@spectra" in normalized.mentions

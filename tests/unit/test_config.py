@@ -39,7 +39,7 @@ class TestLoadSpectraConfig:
 
     def test_query_count(self):
         config = load_project(PROJECTS_DIR / "spectra.yaml")
-        assert len(config.queries) == 4
+        assert len(config.queries) == 5  # 4 X queries + 1 LinkedIn query
 
     def test_icp_fields(self):
         config = load_project(PROJECTS_DIR / "spectra.yaml")
