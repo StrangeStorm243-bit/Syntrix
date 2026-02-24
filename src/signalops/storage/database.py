@@ -147,6 +147,9 @@ class Judgment(Base):
     human_corrected_at = Column(DateTime)
     human_reason = Column(Text)
 
+    # A/B test experiment tracking (v0.3)
+    experiment_id = Column(String(64))
+
     __table_args__ = (Index("ix_judgment_project_label", "project_id", "label"),)
 
 
@@ -224,6 +227,81 @@ class AuditLog(Base):
         Index("ix_audit_project_action", "project_id", "action"),
         Index("ix_audit_timestamp", "timestamp"),
     )
+
+
+# ── Model Registry (v0.3 T2) ──
+
+
+class ModelRegistry(Base):
+    __tablename__ = "model_registry"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model_id = Column(String(256), nullable=False, unique=True)
+    provider = Column(String(32), nullable=False)
+    model_type = Column(String(32), nullable=False)  # "judge", "drafter"
+    display_name = Column(String(256))
+    base_model = Column(String(128))
+    training_file = Column(String(512))
+    training_examples = Column(Integer)
+    version = Column(String(64))
+    deployed_at = Column(DateTime, server_default=func.now())
+    is_active = Column(Boolean, default=True)
+    metrics = Column(JSON)  # {"precision": 0.92, "recall": 0.85, ...}
+    metadata_ = Column("metadata", JSON)
+
+    __table_args__ = (Index("ix_model_registry_type_active", "model_type", "is_active"),)
+
+
+# ── A/B Experiments (v0.3 T2) ──
+
+
+class ABExperiment(Base):
+    __tablename__ = "ab_experiments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    experiment_id = Column(String(64), nullable=False, unique=True)
+    project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
+    primary_model = Column(String(256), nullable=False)
+    canary_model = Column(String(256), nullable=False)
+    canary_pct = Column(Float, nullable=False, default=0.1)
+    status = Column(String(16), nullable=False, default="active")
+    started_at = Column(DateTime, server_default=func.now())
+    ended_at = Column(DateTime)
+    hypothesis = Column(Text)
+    metadata_ = Column("metadata", JSON)
+
+    __table_args__ = (Index("ix_ab_experiment_project_status", "project_id", "status"),)
+
+
+class ABResult(Base):
+    __tablename__ = "ab_results"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    experiment_id = Column(String(64), ForeignKey("ab_experiments.experiment_id"), nullable=False)
+    judgment_id = Column(Integer, ForeignKey("judgments.id"))
+    model_used = Column(String(256), nullable=False)
+    latency_ms = Column(Float)
+    created_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (Index("ix_ab_result_experiment", "experiment_id"),)
+
+
+# ── DPO Preference Pairs (v0.3 T2) ──
+
+
+class PreferencePair(Base):
+    __tablename__ = "preference_pairs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    draft_id = Column(Integer, ForeignKey("drafts.id"), nullable=False)
+    project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
+    prompt = Column(Text, nullable=False)
+    chosen_text = Column(Text, nullable=False)
+    rejected_text = Column(Text, nullable=False)
+    source = Column(String(32), nullable=False)  # "edit", "reject", "manual"
+    created_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (Index("ix_pref_pair_project", "project_id"),)
 
 
 # ── Engine / Session helpers ──

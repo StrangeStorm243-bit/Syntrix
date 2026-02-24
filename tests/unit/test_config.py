@@ -99,7 +99,7 @@ class TestLoadSaleSenseConfig:
         config = load_project(PROJECTS_DIR / "salesense.yaml")
         assert config.product_url == "https://salesense.io"
         assert config.notifications.enabled is True
-        assert config.llm["temperature"] == 0.4
+        assert config.llm.temperature == 0.4
 
 
 class TestEnvVarResolution:

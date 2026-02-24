@@ -1,166 +1,123 @@
-"""LLM Gateway — routes calls to providers with retries and circuit breaking."""
+"""LLM Gateway — thin wrapper around LiteLLM for unified model access."""
 
 from __future__ import annotations
 
+import json
 import logging
-import time
 from typing import Any
 
-from signalops.models.providers.base import LLMProvider, ProviderConfig
+import litellm
+
+try:
+    from langfuse.decorators import langfuse_context, observe
+
+    _HAS_LANGFUSE = True
+except ImportError:
+    _HAS_LANGFUSE = False
+    langfuse_context = None  # noqa: N816
+
+    def observe(**_kwargs: Any) -> Any:  # noqa: N802
+        """No-op decorator when langfuse is not installed."""
+
+        def decorator(func: Any) -> Any:
+            return func
+
+        return decorator
+
 
 logger = logging.getLogger(__name__)
 
-
-class CircuitBreaker:
-    """Trips after N failures, stays open for recovery_timeout seconds."""
-
-    def __init__(self, failure_threshold: int = 5, recovery_timeout: float = 60.0):
-        self._failure_threshold = failure_threshold
-        self._recovery_timeout = recovery_timeout
-        self._failure_count = 0
-        self._last_failure_time: float | None = None
-        self._tripped = False
-
-    def record_success(self) -> None:
-        self._failure_count = 0
-        self._tripped = False
-
-    def record_failure(self) -> None:
-        self._failure_count += 1
-        self._last_failure_time = time.monotonic()
-        if self._failure_count >= self._failure_threshold:
-            self._tripped = True
-
-    def is_open(self) -> bool:
-        if not self._tripped:
-            return False
-        if self._last_failure_time is not None:
-            elapsed = time.monotonic() - self._last_failure_time
-            if elapsed >= self._recovery_timeout:
-                return False
-        return True
-
-    @property
-    def state(self) -> str:
-        if not self._tripped:
-            return "closed"
-        if self._last_failure_time is not None:
-            elapsed = time.monotonic() - self._last_failure_time
-            if elapsed >= self._recovery_timeout:
-                return "half-open"
-        return "open"
+# Disable LiteLLM's verbose logging
+litellm.suppress_debug_info = True
 
 
 class LLMGateway:
-    """Routes LLM calls to the right provider. Handles retries and circuit breaking."""
+    """Unified LLM interface powered by LiteLLM.
+
+    Supports 100+ providers (OpenAI, Anthropic, Cohere, local models, etc.)
+    via a single API. Handles routing, retries, and fallbacks.
+
+    LiteLLM reads API keys from environment variables automatically:
+    - ANTHROPIC_API_KEY for Claude models
+    - OPENAI_API_KEY for GPT / fine-tuned models
+    """
 
     def __init__(
         self,
-        anthropic_api_key: str | None = None,
-        openai_api_key: str | None = None,
         default_model: str = "claude-sonnet-4-6",
-    ):
-        self._api_keys = {
-            "anthropic": anthropic_api_key,
-            "openai": openai_api_key,
-        }
-        self._providers: dict[str, LLMProvider] = {}
-        self._circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=60)
+        fallback_models: list[str] | None = None,
+        temperature: float = 0.3,
+        max_tokens: int = 1024,
+    ) -> None:
         self._default_model = default_model
+        self._fallback_models = fallback_models or []
+        self._temperature = temperature
+        self._max_tokens = max_tokens
 
-    def _get_provider(self, model: str) -> LLMProvider:
-        if model in self._providers:
-            return self._providers[model]
-
-        provider: LLMProvider
-        if model.startswith("claude-"):
-            from signalops.models.providers.anthropic import AnthropicProvider
-
-            api_key = self._api_keys.get("anthropic")
-            if not api_key:
-                raise ValueError("Anthropic API key not configured")
-            config = ProviderConfig(api_key=api_key, model=model)
-            provider = AnthropicProvider(config)
-        elif model.startswith("gpt-"):
-            from signalops.models.providers.openai import OpenAIProvider
-
-            api_key = self._api_keys.get("openai")
-            if not api_key:
-                raise ValueError("OpenAI API key not configured")
-            config = ProviderConfig(api_key=api_key, model=model)
-            provider = OpenAIProvider(config)
-        else:
-            raise ValueError(f"Unknown model prefix: {model}")
-
-        self._providers[model] = provider
-        return provider
-
+    @observe(as_type="generation")  # type: ignore[untyped-decorator]
     def complete(
         self,
         system_prompt: str,
         user_prompt: str,
         model: str | None = None,
+        temperature: float | None = None,
         **kwargs: Any,
     ) -> str:
+        """Get a text completion from the LLM."""
         model = model or self._default_model
-        provider = self._get_provider(model)
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
 
-        last_error: Exception | None = None
-        for attempt in range(3):
-            if self._circuit_breaker.is_open():
-                raise RuntimeError(
-                    f"Circuit breaker is open after repeated failures "
-                    f"(state={self._circuit_breaker.state})"
-                )
-            try:
-                result = provider.complete(system_prompt, user_prompt, **kwargs)
-                self._circuit_breaker.record_success()
-                return result
-            except Exception as e:
-                last_error = e
-                self._circuit_breaker.record_failure()
-                logger.warning(
-                    "LLM call failed (attempt %d/3, model=%s): %s",
-                    attempt + 1,
-                    model,
-                    e,
-                )
-                if attempt < 2:
-                    time.sleep(2**attempt)
+        if _HAS_LANGFUSE:
+            langfuse_context.update_current_observation(
+                model=model,
+                metadata={"temperature": temperature or self._temperature},
+            )
 
-        raise RuntimeError(f"All 3 retry attempts failed for model {model}") from last_error
+        response = litellm.completion(
+            model=model,
+            messages=messages,
+            temperature=temperature if temperature is not None else self._temperature,
+            max_tokens=self._max_tokens,
+            fallbacks=self._fallback_models if self._fallback_models else None,
+            num_retries=2,
+        )
+        return str(response.choices[0].message.content or "")
 
     def complete_json(
         self,
         system_prompt: str,
         user_prompt: str,
         model: str | None = None,
+        temperature: float | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        model = model or self._default_model
-        provider = self._get_provider(model)
+        """Get a JSON completion, parsed into a dict."""
+        raw = self.complete(system_prompt, user_prompt, model, temperature)
+        # Strip markdown code fences if present
+        raw = raw.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        raw = raw.strip()
+        try:
+            return json.loads(raw)  # type: ignore[no-any-return]
+        except json.JSONDecodeError:
+            logger.warning("Failed to parse LLM JSON response: %s", raw[:200])
+            return {"error": "parse_failed", "raw": raw}
 
-        last_error: Exception | None = None
-        for attempt in range(3):
-            if self._circuit_breaker.is_open():
-                raise RuntimeError(
-                    f"Circuit breaker is open after repeated failures "
-                    f"(state={self._circuit_breaker.state})"
+    def get_cost(self, model: str, prompt_tokens: int, completion_tokens: int) -> float:
+        """Get cost estimate for a completion using LiteLLM's cost tracking."""
+        try:
+            return float(
+                litellm.completion_cost(
+                    model=model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
                 )
-            try:
-                result = provider.complete_json(system_prompt, user_prompt, **kwargs)
-                self._circuit_breaker.record_success()
-                return result
-            except Exception as e:
-                last_error = e
-                self._circuit_breaker.record_failure()
-                logger.warning(
-                    "LLM JSON call failed (attempt %d/3, model=%s): %s",
-                    attempt + 1,
-                    model,
-                    e,
-                )
-                if attempt < 2:
-                    time.sleep(2**attempt)
-
-        raise RuntimeError(f"All 3 retry attempts failed for model {model}") from last_error
+            )
+        except Exception:
+            return 0.0

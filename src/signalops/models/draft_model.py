@@ -4,9 +4,26 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from signalops.models.llm_gateway import LLMGateway
+try:
+    from langfuse.decorators import observe
+
+    _HAS_LANGFUSE = True
+except ImportError:
+    _HAS_LANGFUSE = False
+
+    def observe(**_kwargs: Any) -> Any:
+        """No-op decorator when langfuse is not installed."""
+
+        def decorator(func: Any) -> Any:
+            return func
+
+        return decorator
+
+
+if TYPE_CHECKING:
+    from signalops.models.llm_gateway import LLMGateway
 
 
 @dataclass
@@ -42,6 +59,7 @@ class LLMDraftGenerator(DraftGenerator):
         self._gateway = gateway
         self._model = model
 
+    @observe(name="generate_draft")  # type: ignore[untyped-decorator]
     def generate(
         self,
         post_text: str,

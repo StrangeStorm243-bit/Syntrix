@@ -29,10 +29,15 @@ def draft_cmd(ctx: click.Context, top: int) -> None:
     from signalops.models.llm_gateway import LLMGateway
     from signalops.pipeline.drafter import DrafterStage
 
-    gateway = LLMGateway()
+    gateway = LLMGateway(
+        default_model=config.llm.draft_model,
+        fallback_models=config.llm.fallback_models,
+        temperature=config.llm.temperature,
+        max_tokens=config.llm.max_tokens,
+    )
     generator = LLMDraftGenerator(
         gateway=gateway,
-        model=config.llm.get("draft_model", "claude-sonnet-4-6"),
+        model=config.llm.draft_model,
     )
     drafter = DrafterStage(generator=generator, db_session=session)
 

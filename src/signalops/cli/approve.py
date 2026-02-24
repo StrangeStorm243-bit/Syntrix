@@ -159,6 +159,15 @@ def queue_edit(ctx: click.Context, draft_id: int) -> None:
         draft_id,
         details={"new_text": draft.text_final},
     )
+
+    # Collect DPO preference pair from the edit
+    from signalops.training.dpo import DPOCollector
+
+    collector = DPOCollector(session)
+    pair = collector.collect_from_edit(draft_id)
+    if pair:
+        console.print("[dim]DPO preference pair collected.[/dim]")
+
     console.print(f"[green]Draft #{draft_id} edited and approved.")
     session.close()
 
@@ -196,4 +205,7 @@ def queue_reject(ctx: click.Context, draft_id: int, reason: str | None) -> None:
         details={"reason": reason} if reason else None,
     )
     console.print(f"[yellow]Draft #{draft_id} rejected." + (f" Reason: {reason}" if reason else ""))
+    console.print(
+        "[dim]Rejection recorded. Use 'export training-data --type dpo' with edited drafts.[/dim]"
+    )
     session.close()

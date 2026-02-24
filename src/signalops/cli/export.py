@@ -19,7 +19,7 @@ def export_group() -> None:
 @click.option(
     "--type",
     "data_type",
-    type=click.Choice(["judgments", "drafts", "outcomes"]),
+    type=click.Choice(["judgments", "drafts", "outcomes", "dpo"]),
     required=True,
 )
 @click.option(
@@ -95,6 +95,15 @@ def export_training_data(
             project_id=project_id,
             output=default_output,
         )
+    elif data_type == "dpo":
+        default_output = output or "preferences.jsonl"
+        if dry_run:
+            console.print(f"[yellow][DRY RUN] Would export DPO pairs to {default_output}")
+            session.close()
+            return
+        from signalops.training.dpo import export_dpo_pairs
+
+        result = export_dpo_pairs(session, project_id, default_output)
     else:
         default_output = output or "preferences.jsonl"
         if dry_run:

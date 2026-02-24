@@ -108,7 +108,7 @@ def run_all_cmd(ctx: click.Context) -> None:
     # Build connector
     from signalops.connectors.x_api import XConnector
     from signalops.models.draft_model import LLMDraftGenerator
-    from signalops.models.judge_model import LLMPromptJudge
+    from signalops.models.judge_factory import create_judge
     from signalops.models.llm_gateway import LLMGateway
     from signalops.pipeline.orchestrator import PipelineOrchestrator
 
@@ -117,14 +117,16 @@ def run_all_cmd(ctx: click.Context) -> None:
     connector = XConnector(bearer_token=bearer_token, rate_limiter=rate_limiter)
 
     # Build LLM components
-    gateway = LLMGateway()
-    judge = LLMPromptJudge(
-        gateway=gateway,
-        model=config.llm.get("judge_model", "claude-sonnet-4-6"),
+    gateway = LLMGateway(
+        default_model=config.llm.judge_model,
+        fallback_models=config.llm.fallback_models,
+        temperature=config.llm.temperature,
+        max_tokens=config.llm.max_tokens,
     )
+    judge = create_judge(config=config, gateway=gateway, db_session=session)
     draft_generator = LLMDraftGenerator(
         gateway=gateway,
-        model=config.llm.get("draft_model", "claude-sonnet-4-6"),
+        model=config.llm.draft_model,
     )
 
     orchestrator = PipelineOrchestrator(

@@ -36,10 +36,13 @@ def eval_judge(ctx: click.Context, test_set: str, project_name: str | None) -> N
         },
     }
 
-    default_model = "claude-sonnet-4-6"
-    model = config.llm.get("judge_model", default_model) if config.llm else default_model
-    gateway = LLMGateway()
-    judge = LLMPromptJudge(gateway=gateway, model=model)
+    gateway = LLMGateway(
+        default_model=config.llm.judge_model,
+        fallback_models=config.llm.fallback_models,
+        temperature=config.llm.temperature,
+        max_tokens=config.llm.max_tokens,
+    )
+    judge = LLMPromptJudge(gateway=gateway, model=config.llm.judge_model)
 
     evaluator = JudgeEvaluator(judge=judge)
     result = evaluator.evaluate(test_set_path=test_set, project_context=project_context)
@@ -74,7 +77,12 @@ def eval_compare(ctx: click.Context, test_set: str, models: str) -> None:
     }
 
     model_ids = [m.strip() for m in models.split(",")]
-    gateway = LLMGateway()
+    gateway = LLMGateway(
+        default_model=config.llm.judge_model,
+        fallback_models=config.llm.fallback_models,
+        temperature=config.llm.temperature,
+        max_tokens=config.llm.max_tokens,
+    )
     judges = [LLMPromptJudge(gateway=gateway, model=m) for m in model_ids]
 
     evaluator = JudgeEvaluator(judge=judges[0])
