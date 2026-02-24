@@ -40,3 +40,4 @@ worktrees/
 # Credentials
 .signalops/
 .worktrees/
+.mcp.json
