@@ -1,8 +1,9 @@
 # Terminal 2 — Fine-Tuned Models + A/B Testing + DPO Preference Data
 
-> **Scope:** Deploy fine-tuned classifiers, A/B test between models, collect DPO preference pairs
+> **Scope:** Deploy fine-tuned classifiers, A/B test between models, collect DPO preference pairs,
+> integrate LiteLLM as unified LLM gateway, add Langfuse observability, optional Argilla export
 > **New files:** `models/ab_test.py`, `models/finetuned.py`, `training/dpo.py`, CLI commands
-> **Touches existing:** `judge_model.py`, `orchestrator.py`, `schema.py`, `database.py`, `exporter.py`
+> **Touches existing:** `llm_gateway.py` (replaced by LiteLLM), `judge_model.py`, `orchestrator.py`, `schema.py`, `database.py`, `exporter.py`
 > **Depends on:** None (fully isolated until Phase 3 integration)
 
 ---
@@ -10,18 +11,22 @@
 ## Table of Contents
 
 1. [Overview](#1-overview)
-2. [Phase 1 — Fine-Tuned Model Support](#2-phase-1--fine-tuned-model-support)
-3. [Phase 2 — A/B Testing Framework](#3-phase-2--ab-testing-framework)
-4. [Phase 3 — DPO Preference Collection](#4-phase-3--dpo-preference-collection)
-5. [Phase 4 — CLI Commands + Integration](#5-phase-4--cli-commands--integration)
-6. [File Manifest](#6-file-manifest)
-7. [Testing Plan](#7-testing-plan)
+2. [Phase 0 — LiteLLM Gateway Replacement](#2-phase-0--litellm-gateway-replacement)
+3. [Phase 1 — Fine-Tuned Model Support](#3-phase-1--fine-tuned-model-support)
+4. [Phase 2 — A/B Testing Framework](#4-phase-2--ab-testing-framework)
+5. [Phase 2.5 — Langfuse LLM Observability](#5-phase-25--langfuse-llm-observability)
+6. [Phase 3 — DPO Preference Collection](#6-phase-3--dpo-preference-collection)
+7. [Phase 4 — CLI Commands + Integration](#7-phase-4--cli-commands--integration)
+8. [File Manifest](#8-file-manifest)
+9. [Testing Plan](#9-testing-plan)
 
 ---
 
 ## 1. Overview
 
-This terminal adds three interconnected ML pipeline features:
+This terminal adds three core ML pipeline features plus three key integrations:
+
+**Core Features:**
 
 1. **Fine-Tuned Model Deployment** — The `RelevanceJudge` interface already supports swappable
    implementations. We add `FineTunedJudge` that calls OpenAI's fine-tuned model API and a
@@ -33,15 +38,193 @@ This terminal adds three interconnected ML pipeline features:
 3. **DPO Preference Collection** — When a human edits a draft (chosen=edited, rejected=original)
    or rejects a draft, we auto-generate preference pairs for DPO fine-tuning.
 
+**Integrations:**
+
+4. **LiteLLM Gateway** — Replace the hand-rolled `llm_gateway.py` + `providers/` package with
+   [LiteLLM](https://github.com/BerriAI/litellm) (16k+ stars). Unified API for 100+ LLM
+   providers, automatic fallbacks, cost tracking, built-in rate limiting. This simplifies
+   fine-tuned model routing (LiteLLM natively handles `ft:` prefixed models) and reduces
+   code we need to maintain.
+
+5. **Langfuse Observability** — Add [Langfuse](https://github.com/langfuse/langfuse) (19k+ stars)
+   tracing to all LLM calls via `@observe()` decorators. Every judge and draft call gets traced
+   with latency, token usage, cost, and output quality. The Langfuse dashboard provides
+   experiment comparison UI for A/B tests, reducing the need for custom analytics code.
+
+6. **Argilla Export (optional)** — Add [Argilla](https://github.com/argilla-io/argilla) (4k+ stars)
+   as an optional export target for DPO preference pairs and human corrections. Gives a proper
+   annotation UI for reviewing training data before fine-tuning. Not a hard dependency —
+   users without Argilla use the existing JSONL export.
+
 **Key design decisions:**
+- LiteLLM replaces custom gateway — reduces provider-specific code to near zero
+- Langfuse traces power A/B test analytics — less custom stats code needed
 - Cloud-only fine-tuned models (OpenAI fine-tuning API) — no self-hosted inference
 - A/B test is transparent to the pipeline — same `RelevanceJudge` interface
 - DPO pairs auto-generated from existing approval flow — no new user actions needed
+- Argilla is optional (`pip install signalops[argilla]`) — not a core dependency
 - Model registry in DB for versioning and audit trail
 
 ---
 
-## 2. Phase 1 — Fine-Tuned Model Support
+## 2. Phase 0 — LiteLLM Gateway Replacement
+
+> **Do this first.** LiteLLM replaces the foundation that all other T2 features build on.
+
+### Step 0.1: Replace LLM Gateway
+
+**Refactor `src/signalops/models/llm_gateway.py`:**
+
+Replace the custom gateway with a thin wrapper around LiteLLM's `completion()` API:
+
+```python
+"""LLM Gateway — thin wrapper around LiteLLM for unified model access."""
+
+from __future__ import annotations
+
+import json
+import logging
+from typing import Any
+
+import litellm
+
+logger = logging.getLogger(__name__)
+
+# Disable LiteLLM's verbose logging
+litellm.suppress_debug_info = True
+
+
+class LLMGateway:
+    """Unified LLM interface powered by LiteLLM.
+
+    Supports 100+ providers (OpenAI, Anthropic, Cohere, local models, etc.)
+    via a single API. Handles routing, retries, and fallbacks.
+    """
+
+    def __init__(
+        self,
+        default_model: str = "claude-sonnet-4-6",
+        fallback_models: list[str] | None = None,
+        temperature: float = 0.3,
+        max_tokens: int = 1024,
+    ) -> None:
+        self._default_model = default_model
+        self._fallback_models = fallback_models or []
+        self._temperature = temperature
+        self._max_tokens = max_tokens
+
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: str | None = None,
+        temperature: float | None = None,
+    ) -> str:
+        """Get a text completion from the LLM."""
+        model = model or self._default_model
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        response = litellm.completion(
+            model=model,
+            messages=messages,
+            temperature=temperature or self._temperature,
+            max_tokens=self._max_tokens,
+            fallbacks=self._fallback_models if self._fallback_models else None,
+        )
+        return response.choices[0].message.content or ""
+
+    def complete_json(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: str | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
+        """Get a JSON completion, parsed into a dict."""
+        raw = self.complete(system_prompt, user_prompt, model, temperature)
+        # Strip markdown code fences if present
+        raw = raw.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        raw = raw.strip()
+        try:
+            return json.loads(raw)  # type: ignore[no-any-return]
+        except json.JSONDecodeError:
+            logger.warning("Failed to parse LLM JSON response: %s", raw[:200])
+            return {"error": "parse_failed", "raw": raw}
+
+    def get_cost(self, model: str, prompt_tokens: int, completion_tokens: int) -> float:
+        """Get cost estimate for a completion using LiteLLM's cost tracking."""
+        try:
+            return litellm.completion_cost(
+                model=model,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+            )
+        except Exception:
+            return 0.0
+```
+
+### Step 0.2: Remove Custom Providers
+
+**Delete or gut these files:**
+- `src/signalops/models/providers/anthropic.py` — no longer needed, LiteLLM handles it
+- `src/signalops/models/providers/openai.py` — no longer needed
+- `src/signalops/models/providers/base.py` — no longer needed
+
+Keep `providers/__init__.py` as an empty package if needed for imports, or remove the
+entire `providers/` directory.
+
+### Step 0.3: Update Config
+
+**Update `src/signalops/config/schema.py`:**
+
+```python
+class LLMConfig(BaseModel):
+    """LLM configuration — powered by LiteLLM."""
+    judge_model: str = "claude-sonnet-4-6"
+    draft_model: str = "claude-sonnet-4-6"
+    temperature: float = 0.3
+    max_tokens: int = 1024
+    fallback_models: list[str] = []           # Automatic fallback chain
+    judge_fallback_model: str | None = None   # Judge-specific fallback
+    max_judge_latency_ms: float = 5000        # Timeout before fallback
+```
+
+### Step 0.4: Update Dependencies
+
+**Update `pyproject.toml`:**
+
+```toml
+dependencies = [
+    # ... existing ...
+    "litellm>=1.55",
+    # Remove: "anthropic>=0.40" and "openai>=1.50"
+    # (LiteLLM includes them as transitive deps)
+]
+```
+
+### Step 0.5: Update Tests
+
+- Update all tests that mock `LLMGateway` — the interface stays the same, just the internals change
+- Add `tests/unit/test_litellm_gateway.py` — test the new gateway wrapper
+- Verify `complete_json()` still handles malformed LLM responses correctly
+
+**Acceptance criteria for Phase 0:**
+- [ ] `litellm.completion()` is the only way LLM calls are made
+- [ ] `providers/` directory is removed or emptied
+- [ ] All existing judge and draft tests pass with the new gateway
+- [ ] Fallback chain works: if primary model fails, fallback is tried
+- [ ] Cost tracking via `litellm.completion_cost()` works
+
+---
+
+## 3. Phase 1 — Fine-Tuned Model Support
 
 ### Step 1: Model Registry
 
@@ -596,7 +779,98 @@ def _generate_recommendation(
 
 ---
 
-## 4. Phase 3 — DPO Preference Collection
+## 5. Phase 2.5 — Langfuse LLM Observability
+
+### Step 7.5: Add Langfuse Tracing
+
+**Install:** `pip install langfuse`
+
+**Update `pyproject.toml`:**
+```toml
+dependencies = [
+    # ... existing ...
+    "langfuse>=2.50",
+]
+```
+
+**Instrument the LLM Gateway (`src/signalops/models/llm_gateway.py`):**
+
+```python
+from langfuse.decorators import observe, langfuse_context
+
+class LLMGateway:
+    # ... existing __init__ ...
+
+    @observe(as_type="generation")
+    def complete(self, system_prompt: str, user_prompt: str,
+                 model: str | None = None, temperature: float | None = None) -> str:
+        """Get a text completion — traced by Langfuse."""
+        model = model or self._default_model
+        langfuse_context.update_current_observation(
+            model=model,
+            metadata={"temperature": temperature or self._temperature},
+        )
+        # ... existing litellm.completion() call ...
+```
+
+**Instrument the Judge (`src/signalops/models/judge_model.py`):**
+
+```python
+from langfuse.decorators import observe
+
+class LLMPromptJudge(RelevanceJudge):
+    @observe(name="judge_relevance")
+    def judge(self, post_text, author_bio, project_context):
+        # ... existing logic — Langfuse auto-captures the LLM call inside ...
+```
+
+**Instrument the Drafter (`src/signalops/models/draft_model.py`):**
+
+```python
+from langfuse.decorators import observe
+
+class LLMDraftGenerator(DraftGenerator):
+    @observe(name="generate_draft")
+    def generate(self, post_text, author_context, project_context, persona):
+        # ... existing logic ...
+```
+
+**Tag A/B test experiments:**
+
+```python
+# In ABTestJudge.judge():
+from langfuse.decorators import langfuse_context
+
+langfuse_context.update_current_trace(
+    tags=["ab-test", f"experiment:{self._experiment_id}"],
+    metadata={"model_variant": "canary" if use_canary else "primary"},
+)
+```
+
+**Environment variables:**
+```bash
+# .env additions
+LANGFUSE_PUBLIC_KEY=pk-...      # From Langfuse dashboard (self-hosted or cloud)
+LANGFUSE_SECRET_KEY=sk-...
+LANGFUSE_HOST=http://localhost:3000  # Self-hosted URL, or https://cloud.langfuse.com
+```
+
+**What this gives you:**
+- Every LLM call traced with latency, tokens, cost, input/output
+- A/B test experiments tagged and filterable in Langfuse dashboard
+- Model comparison views (fine-tuned vs prompt-based) without custom code
+- Cost tracking per project, per model, per time period
+- The Experiments page in T1's React dashboard can link to Langfuse instead of building custom charts
+
+**Acceptance criteria:**
+- [ ] Every judge and draft LLM call appears in Langfuse traces
+- [ ] A/B test experiments are tagged and filterable
+- [ ] Langfuse is optional — if env vars are missing, tracing is silently disabled
+- [ ] No performance impact when Langfuse is disabled
+
+---
+
+## 6. Phase 3 — DPO Preference Collection
 
 ### Step 8: Preference Pairs Table
 
@@ -850,6 +1124,73 @@ signalops export training-data --type dpo --project spectra --output preferences
 
 - Add `dpo` as a valid `--type` option alongside existing `judgments`
 - Calls `export_dpo_pairs()` from `training/dpo.py`
+
+### Step 13.5: Argilla Export (Optional)
+
+**Create `src/signalops/training/argilla_export.py`:**
+
+```python
+"""Optional Argilla export for DPO pairs and human corrections."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from sqlalchemy.orm import Session
+
+
+def export_to_argilla(
+    db_session: Session,
+    project_id: str,
+    argilla_api_url: str = "http://localhost:6900",
+    argilla_api_key: str = "",
+    dataset_name: str | None = None,
+) -> dict[str, Any]:
+    """Push preference pairs to Argilla for annotation review.
+
+    Requires: pip install signalops[argilla]
+    """
+    try:
+        import argilla as rg
+    except ImportError:
+        return {"error": "argilla not installed. Run: pip install signalops[argilla]"}
+
+    client = rg.Argilla(api_url=argilla_api_url, api_key=argilla_api_key)
+    name = dataset_name or f"signalops-dpo-{project_id}"
+
+    from signalops.storage.database import PreferencePair
+
+    pairs = (
+        db_session.query(PreferencePair)
+        .filter(PreferencePair.project_id == project_id)
+        .all()
+    )
+
+    records = [
+        rg.Record(
+            fields={"prompt": pair.prompt, "chosen": pair.chosen_text, "rejected": pair.rejected_text},
+            metadata={"source": pair.source, "draft_id": pair.draft_id},
+        )
+        for pair in pairs
+    ]
+
+    dataset = rg.Dataset(name=name, records=records)
+    dataset.push_to_argilla(client)
+    return {"records": len(records), "dataset": name}
+```
+
+**Extend CLI (`src/signalops/cli/export.py`):**
+```
+signalops export training-data --type dpo --output argilla --argilla-url http://localhost:6900
+```
+
+Add `--output` option: `jsonl` (default) or `argilla`. When `argilla`, calls `export_to_argilla()`.
+
+**Update `pyproject.toml`:**
+```toml
+[project.optional-dependencies]
+argilla = ["argilla>=2.0"]
+```
 
 ### Step 14: Update Orchestrator
 

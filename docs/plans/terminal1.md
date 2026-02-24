@@ -326,10 +326,11 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
 
 **`dashboard/src/pages/Experiments.tsx`:**
 - List active and completed A/B experiments
-- Experiment detail: side-by-side model comparison
-- Metrics: accuracy, confidence distribution, latency, human correction rate
-- Statistical significance indicator (p-value, confidence interval)
-- Create new experiment form
+- Create new experiment form, stop experiment button
+- **Reduced scope:** Deep model comparison metrics (latency, accuracy, cost) are handled
+  by Langfuse (integrated in T2). This page shows experiment status, links to Langfuse
+  traces, and displays summary results from the `/api/experiments/{id}/results` endpoint.
+- If Langfuse is configured, embed link to Langfuse dashboard filtered by experiment tag
 
 **`dashboard/src/pages/Settings.tsx`:**
 - API key configuration
