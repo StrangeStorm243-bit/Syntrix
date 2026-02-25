@@ -65,7 +65,6 @@ export function StageOrb({ position, color, label, count, active }: StageOrbProp
           color="#a0a0b0"
           anchorX="center"
           anchorY="middle"
-          font="/fonts/RobotoMono-Regular.ttf"
         >
           {String(count)}
         </Text>
