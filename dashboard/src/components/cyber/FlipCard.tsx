@@ -28,9 +28,10 @@ export function FlipCard({
 
   return (
     <div
-      className={cn('group cursor-pointer', className)}
+      className={cn('group', className)}
       style={{ perspective: '1200px' }}
-      onClick={() => setFlipped((f) => !f)}
+      onMouseEnter={() => setFlipped(true)}
+      onMouseLeave={() => setFlipped(false)}
     >
       <div
         className="relative h-full w-full transition-transform duration-700"
