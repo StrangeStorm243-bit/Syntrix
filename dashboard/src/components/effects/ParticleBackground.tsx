@@ -3,6 +3,7 @@ import Particles, { initParticlesEngine } from '@tsparticles/react';
 import type { ISourceOptions } from '@tsparticles/engine';
 import { loadSlim } from '@tsparticles/slim';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { usePerformanceMode } from '../../hooks/usePerformanceMode';
 
 function getParticleCount(): number {
   const width = window.innerWidth;
@@ -14,6 +15,7 @@ function getParticleCount(): number {
 export function ParticleBackground() {
   const [engineReady, setEngineReady] = useState(false);
   const prefersReducedMotion = useReducedMotion();
+  const { performanceMode } = usePerformanceMode();
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -131,7 +133,7 @@ export function ParticleBackground() {
     detectRetina: true,
   };
 
-  if (!engineReady) {
+  if (!engineReady || performanceMode) {
     return null;
   }
 

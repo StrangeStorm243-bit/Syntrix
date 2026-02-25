@@ -11,6 +11,27 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-3d': [
+            'three',
+            '@react-three/fiber',
+            '@react-three/drei',
+            '@react-three/postprocessing',
+          ],
+          'vendor-particles': [
+            '@tsparticles/react',
+            '@tsparticles/slim',
+          ],
+          'vendor-motion': ['motion'],
+          'vendor-charts': ['recharts'],
+          'vendor-xyflow': ['@xyflow/react', '@xyflow/system'],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8400',

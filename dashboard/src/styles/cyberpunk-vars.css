@@ -21,7 +21,7 @@
 
   /* Text tones */
   --cyber-text: oklch(0.920 0.010 95.3);           /* warm white (gold tint) */
-  --cyber-text-dim: oklch(0.600 0.010 95.3);       /* muted text */
+  --cyber-text-dim: oklch(0.640 0.010 95.3);       /* muted text — WCAG AA on all surfaces */
 
   /* Glow tokens (used by glassmorphism.css) */
   --cyber-glow-pink: oklch(0.655 0.261 356.9 / 0.4);
