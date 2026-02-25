@@ -1,6 +1,7 @@
 import { DraftCard } from '../components/DraftCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { EmptyState } from '../components/EmptyState';
+import { FlipCard } from '../components/cyber/FlipCard';
 import { useQueue, useApproveDraft, useEditDraft, useRejectDraft } from '../hooks/useQueue';
 
 export default function Queue() {
@@ -19,6 +20,14 @@ export default function Queue() {
         <h1 className="text-2xl font-bold">Approval Queue</h1>
         <span className="text-sm text-gray-400">{data?.total ?? 0} pending</span>
       </div>
+
+      <FlipCard
+        frontSrc="/images/thread-front.png"
+        backSrc="/images/thread-back.png"
+        alt="The Thread"
+        className="h-40 w-full"
+        autoFlipInterval={5000}
+      />
 
       {drafts.length === 0 ? (
         <EmptyState title="Queue empty" description="No drafts waiting for approval." />

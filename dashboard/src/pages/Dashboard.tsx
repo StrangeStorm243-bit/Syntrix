@@ -10,6 +10,7 @@ import { useStaggerMount } from '../hooks/useStaggerMount';
 import { usePerformanceMode } from '../hooks/usePerformanceMode';
 import { lazy3D, Suspense3D } from '../lib/lazy-3d';
 import { FUNNEL_COLORS } from '../lib/chart-theme';
+import { FlipCard } from '../components/cyber/FlipCard';
 
 const HeroScene = lazy3D(() => import('../scenes/HeroScene'));
 
@@ -52,19 +53,32 @@ export default function Dashboard() {
         </motion.div>
       </motion.div>
 
-      {/* Conversion funnel chart — neon cell colors */}
-      {funnel && funnel.length > 0 && (
+      {/* Conversion funnel + decorative art */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          {funnel && funnel.length > 0 && (
+            <motion.div variants={itemVariants} initial="hidden" animate="visible">
+              <CyberBarChart
+                title="Pipeline Funnel"
+                data={funnel}
+                dataKey="count"
+                xAxisKey="stage"
+                fillMode="cells"
+                colors={FUNNEL_COLORS}
+              />
+            </motion.div>
+          )}
+        </div>
         <motion.div variants={itemVariants} initial="hidden" animate="visible">
-          <CyberBarChart
-            title="Pipeline Funnel"
-            data={funnel}
-            dataKey="count"
-            xAxisKey="stage"
-            fillMode="cells"
-            colors={FUNNEL_COLORS}
+          <FlipCard
+            frontSrc="/images/signal-front.png"
+            backSrc="/images/signal-back.png"
+            alt="Signal in the Noise"
+            className="h-64 w-full"
+            autoFlipInterval={6000}
           />
         </motion.div>
-      )}
+      </div>
     </div>
   );
 }

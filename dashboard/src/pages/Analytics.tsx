@@ -4,6 +4,7 @@ import { CyberBarChart } from '../components/cyber/CyberBarChart';
 import { CyberFunnelChart } from '../components/cyber/CyberFunnelChart';
 import { useScoreDistribution, useConversionFunnel, useQueryPerformance } from '../hooks/useAnalytics';
 import { GRADIENT_IDS } from '../lib/chart-theme';
+import { FlipCard } from '../components/cyber/FlipCard';
 
 interface QueryPerf {
   query_label: string;
@@ -76,6 +77,22 @@ export default function Analytics() {
             emptyMessage="No query data yet"
           />
         </div>
+
+        {/* Decorative art cards */}
+        <FlipCard
+          frontSrc="/images/constellation-front.png"
+          backSrc="/images/constellation-back.png"
+          alt="Constellation of One"
+          className="h-56 w-full"
+          autoFlipInterval={7000}
+        />
+        <FlipCard
+          frontSrc="/images/rising-front.png"
+          backSrc="/images/rising-back.png"
+          alt="Rising From the Deep"
+          className="h-56 w-full"
+          autoFlipInterval={8000}
+        />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { ScoreBadge } from '../components/ScoreBadge';
 import { JudgmentBadge } from '../components/JudgmentBadge';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { EmptyState } from '../components/EmptyState';
+import { FlipCard } from '../components/cyber/FlipCard';
 
 export default function Leads() {
   const [page, setPage] = useState(1);
@@ -28,6 +29,14 @@ export default function Leads() {
           <option value="maybe">Maybe</option>
         </select>
       </div>
+
+      <FlipCard
+        frontSrc="/images/doorway-front.png"
+        backSrc="/images/doorway-back.png"
+        alt="The Doorway"
+        className="h-40 w-full"
+        autoFlipInterval={6500}
+      />
 
       {isLoading ? (
         <LoadingSpinner className="mx-auto mt-10" />
