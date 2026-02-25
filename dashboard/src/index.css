@@ -1,1 +1,123 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Cyberpunk design system */
+@import "./styles/cyberpunk-vars.css";
+@import "./styles/glassmorphism.css";
+@import "./styles/scanlines.css";
+
+/* JetBrains Mono variable font for HUD typography */
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
+    --radius-3xl: calc(var(--radius) + 12px);
+    --radius-4xl: calc(var(--radius) + 16px);
+
+    /* shadcn/ui semantic tokens */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Cyberpunk palette -> Tailwind utilities (bg-cyber-pink, text-cyber-gold, etc.) */
+    --color-cyber-void: var(--cyber-void);
+    --color-cyber-pink: var(--cyber-pink);
+    --color-cyber-orange: var(--cyber-orange);
+    --color-cyber-gold: var(--cyber-gold);
+    --color-cyber-pink-dim: var(--cyber-pink-dim);
+    --color-cyber-orange-dim: var(--cyber-orange-dim);
+    --color-cyber-gold-dim: var(--cyber-gold-dim);
+    --color-cyber-surface: var(--cyber-surface);
+    --color-cyber-surface-bright: var(--cyber-surface-bright);
+    --color-cyber-text: var(--cyber-text);
+    --color-cyber-text-dim: var(--cyber-text-dim);
+
+    /* Typography */
+    --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Cyberpunk theme — always dark, no light mode */
+:root {
+    --radius: 0.625rem;
+
+    /* shadcn/ui semantic tokens mapped to cyberpunk palette */
+    --background: var(--cyber-void);
+    --foreground: var(--cyber-text);
+    --card: var(--cyber-surface);
+    --card-foreground: var(--cyber-text);
+    --popover: var(--cyber-surface);
+    --popover-foreground: var(--cyber-text);
+    --primary: var(--cyber-pink);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: var(--cyber-surface-bright);
+    --secondary-foreground: var(--cyber-text);
+    --muted: var(--cyber-surface);
+    --muted-foreground: var(--cyber-text-dim);
+    --accent: var(--cyber-surface-bright);
+    --accent-foreground: var(--cyber-text);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.655 0.261 356.9 / 0.15);
+    --input: oklch(0.655 0.261 356.9 / 0.15);
+    --ring: var(--cyber-pink);
+
+    /* Chart colors — cyberpunk neon palette */
+    --chart-1: var(--cyber-pink);
+    --chart-2: var(--cyber-orange);
+    --chart-3: var(--cyber-gold);
+    --chart-4: var(--cyber-pink-dim);
+    --chart-5: var(--cyber-orange-dim);
+
+    /* Sidebar */
+    --sidebar: var(--cyber-surface);
+    --sidebar-foreground: var(--cyber-text);
+    --sidebar-primary: var(--cyber-pink);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: var(--cyber-surface-bright);
+    --sidebar-accent-foreground: var(--cyber-text);
+    --sidebar-border: oklch(0.655 0.261 356.9 / 0.10);
+    --sidebar-ring: var(--cyber-pink);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}

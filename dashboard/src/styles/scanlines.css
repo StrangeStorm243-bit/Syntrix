@@ -1,0 +1,29 @@
+/* CRT Scanline Overlay
+ * Apply .scanlines to a container element.
+ * Uses ::after pseudo-element with pointer-events:none so it never blocks interaction.
+ */
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    oklch(0 0 0 / 0.03) 2px,
+    oklch(0 0 0 / 0.03) 4px
+  );
+  animation: scanline-scroll 8s linear infinite;
+}
+
+@keyframes scanline-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(4px); }
+}

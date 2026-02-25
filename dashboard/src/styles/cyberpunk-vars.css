@@ -1,0 +1,30 @@
+/* Cyberpunk Design System — CSS Custom Properties
+ * All colors in oklch for perceptual uniformity.
+ * Use var(--cyber-*) in CSS or Tailwind utilities (bg-cyber-pink, text-cyber-gold, etc.)
+ */
+
+:root {
+  /* Primary cyberpunk palette */
+  --cyber-void: oklch(0.130 0.010 345.1);         /* #0a0608 — near-black warm bg */
+  --cyber-pink: oklch(0.655 0.261 356.9);          /* #ff1493 — hot pink */
+  --cyber-orange: oklch(0.705 0.193 39.2);         /* #ff6b35 — warm orange */
+  --cyber-gold: oklch(0.887 0.182 95.3);           /* #ffd700 — gold */
+
+  /* Dimmed shades (same hue, lower lightness + chroma) */
+  --cyber-pink-dim: oklch(0.400 0.160 356.9);
+  --cyber-orange-dim: oklch(0.450 0.120 39.2);
+  --cyber-gold-dim: oklch(0.550 0.110 95.3);
+
+  /* Surface tones (derived from void bg with slight warmth) */
+  --cyber-surface: oklch(0.180 0.008 345.1);       /* panels, sidebar */
+  --cyber-surface-bright: oklch(0.240 0.010 345.1); /* elevated cards */
+
+  /* Text tones */
+  --cyber-text: oklch(0.920 0.010 95.3);           /* warm white (gold tint) */
+  --cyber-text-dim: oklch(0.600 0.010 95.3);       /* muted text */
+
+  /* Glow tokens (used by glassmorphism.css) */
+  --cyber-glow-pink: oklch(0.655 0.261 356.9 / 0.4);
+  --cyber-glow-orange: oklch(0.705 0.193 39.2 / 0.4);
+  --cyber-glow-gold: oklch(0.887 0.182 95.3 / 0.3);
+}

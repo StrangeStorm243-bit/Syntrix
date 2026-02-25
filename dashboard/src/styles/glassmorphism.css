@@ -1,0 +1,67 @@
+/* Glassmorphism & Neon Glow Utility Classes
+ * Apply .glass to any element for frosted panel effect.
+ * Apply .neon-glow to interactive elements for hover/focus glow.
+ */
+
+/* --- Glass Effects --- */
+
+.glass {
+  background: oklch(0.130 0.010 345.1 / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.655 0.261 356.9 / 0.15);
+}
+
+.glass-strong {
+  background: oklch(0.130 0.010 345.1 / 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid oklch(0.655 0.261 356.9 / 0.25);
+  box-shadow: 0 0 15px oklch(0.655 0.261 356.9 / 0.1);
+}
+
+.glass-hover {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.glass-hover:hover {
+  border-color: oklch(0.655 0.261 356.9 / 0.4);
+  box-shadow: 0 0 20px oklch(0.655 0.261 356.9 / 0.15);
+}
+
+/* --- Neon Glow States --- */
+
+.neon-glow {
+  transition: box-shadow 0.2s ease;
+}
+.neon-glow:hover {
+  box-shadow:
+    0 0 5px oklch(0.655 0.261 356.9 / 0.5),
+    0 0 20px oklch(0.655 0.261 356.9 / 0.3),
+    0 0 40px oklch(0.655 0.261 356.9 / 0.1);
+}
+.neon-glow:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 5px oklch(0.705 0.193 39.2 / 0.5),
+    0 0 20px oklch(0.705 0.193 39.2 / 0.3);
+}
+
+.neon-glow-orange {
+  transition: box-shadow 0.2s ease;
+}
+.neon-glow-orange:hover {
+  box-shadow:
+    0 0 5px oklch(0.705 0.193 39.2 / 0.5),
+    0 0 20px oklch(0.705 0.193 39.2 / 0.3),
+    0 0 40px oklch(0.705 0.193 39.2 / 0.1);
+}
+
+.neon-glow-gold {
+  transition: box-shadow 0.2s ease;
+}
+.neon-glow-gold:hover {
+  box-shadow:
+    0 0 5px oklch(0.887 0.182 95.3 / 0.5),
+    0 0 20px oklch(0.887 0.182 95.3 / 0.3),
+    0 0 40px oklch(0.887 0.182 95.3 / 0.1);
+}

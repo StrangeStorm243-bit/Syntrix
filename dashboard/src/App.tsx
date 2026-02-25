@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DashboardLayout } from './layouts/DashboardLayout';
+import { CyberpunkLayout } from './layouts/CyberpunkLayout';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
 import Queue from './pages/Queue';
@@ -22,7 +22,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route element={<DashboardLayout />}>
+          <Route element={<CyberpunkLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="leads" element={<Leads />} />
             <Route path="queue" element={<Queue />} />
