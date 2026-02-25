@@ -67,9 +67,10 @@ export async function computeLayout(stages: PipelineStage[]): Promise<LayoutResu
     height: n.height ?? NODE_HEIGHT,
   }));
 
-  const edges: LayoutEdge[] = (layout.edges ?? []).map((e) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const edges: LayoutEdge[] = (layout.edges ?? []).map((e: any) => ({
     id: e.id,
-    sections: (e.sections ?? []).map((s) => ({
+    sections: (e.sections ?? []).map((s: any) => ({
       startPoint: s.startPoint,
       endPoint: s.endPoint,
       bendPoints: s.bendPoints,

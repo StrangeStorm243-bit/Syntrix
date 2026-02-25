@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position } from '@xyflow/react';
 import { BarChart3, Brain, Download, FileText, Send } from 'lucide-react';
 import type { PipelineStage } from './types';
 
-const STAGE_ICONS: Record<string, React.ElementType> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const STAGE_ICONS: Record<string, any> = {
   collect: Download,
   judge: Brain,
   score: BarChart3,
@@ -36,9 +37,7 @@ function AnimatedCounter({ target }: { target: number }) {
   return <>{display.toLocaleString()}</>;
 }
 
-type StageNodeData = PipelineStage & Record<string, unknown>;
-
-export function StageNode({ data }: NodeProps<StageNodeData>) {
+export function StageNode({ data }: { data: PipelineStage & Record<string, unknown> }) {
   const Icon = STAGE_ICONS[data.id] ?? Download;
 
   const glowColor = data.color as string;

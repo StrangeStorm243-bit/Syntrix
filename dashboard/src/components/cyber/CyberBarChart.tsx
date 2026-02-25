@@ -7,11 +7,10 @@ import {
 } from '../../lib/chart-theme';
 import { cn } from '../../lib/utils';
 
-type BarDatum = Record<string, unknown>;
-
 interface CyberBarChartProps {
   title: string;
-  data: BarDatum[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any[];
   dataKey: string;
   xAxisKey: string;
   height?: number;

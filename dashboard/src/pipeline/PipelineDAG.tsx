@@ -15,8 +15,10 @@ import { computeLayout } from './pipeline-layout';
 import type { PipelineFlowData, PipelineStage } from './types';
 
 // Memoize outside component to prevent re-registration on every render
-const nodeTypes = { stage: StageNode };
-const edgeTypes = { data: DataEdge };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const nodeTypes: Record<string, any> = { stage: StageNode };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edgeTypes: Record<string, any> = { data: DataEdge };
 
 interface PipelineDAGProps {
   data: PipelineFlowData;

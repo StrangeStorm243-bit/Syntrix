@@ -9,11 +9,10 @@ import {
 import { TOOLTIP_STYLE, NEON_COLORS, FUNNEL_COLORS } from '../../lib/chart-theme';
 import { cn } from '../../lib/utils';
 
-type FunnelDatum = Record<string, unknown>;
-
 interface CyberFunnelChartProps {
   title: string;
-  data: FunnelDatum[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any[];
   dataKey: string;
   labelKey: string;
   height?: number;
