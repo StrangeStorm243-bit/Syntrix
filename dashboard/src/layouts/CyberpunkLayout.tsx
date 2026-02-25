@@ -1,12 +1,17 @@
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../components/Sidebar';
+import { NeonSidebar } from '../components/cyber';
+import { ParticleBackground } from '../components/effects/ParticleBackground';
+import { PageTransition } from '../components/effects/PageTransition';
 
 export function CyberpunkLayout() {
   return (
     <div className="flex h-screen bg-cyber-void text-cyber-text scanlines">
-      <Sidebar />
+      <ParticleBackground />
+      <NeonSidebar />
       <main className="flex-1 overflow-y-auto p-6">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   );
