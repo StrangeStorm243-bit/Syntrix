@@ -62,6 +62,12 @@ Dependencies:
 - shadcn/ui initialized with `components.json` and cyberpunk theme
 - `dashboard/src/lib/lazy-3d.ts` — lazy-load utilities for future 3D imports
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md -- Install dependencies, configure path aliases, shadcn/ui init, CSS design system (palette, glassmorphism, scanlines, glow, typography)
+- [ ] 01-02-PLAN.md -- CyberpunkLayout wrapper, lazy-3d utility, route swap, visual verification
+
 **Terminal:** T1 (then T2 joins after)
 
 ---
