@@ -7,7 +7,7 @@ import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
  * @example
  * const HeroScene = lazy3D(() => import('./scenes/HeroScene'));
  */
-export function lazy3D<P extends Record<string, unknown>>(
+export function lazy3D<P extends object>(
   factory: () => Promise<{ default: ComponentType<P> }>,
 ) {
   return lazy(factory);

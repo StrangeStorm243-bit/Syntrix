@@ -6,18 +6,26 @@ import { NeonMetricCard } from '../components/cyber/NeonMetricCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useStats } from '../hooks/useStats';
 import { useConversionFunnel } from '../hooks/useAnalytics';
+import { useGPUTier } from '../hooks/useGPUTier';
+import { lazy3D, Suspense3D } from '../lib/lazy-3d';
 import {
   TOOLTIP_STYLE, AXIS_STROKE, AXIS_FONT_SIZE, FUNNEL_COLORS,
 } from '../lib/chart-theme';
 
+const HeroScene = lazy3D(() => import('../scenes/HeroScene'));
+
 export default function Dashboard() {
   const { data: stats, isLoading } = useStats();
   const { data: funnel } = useConversionFunnel();
+  const { tier: gpuTier } = useGPUTier();
 
   if (isLoading) return <LoadingSpinner className="mx-auto mt-20" />;
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      <Suspense3D>
+        <HeroScene gpuTier={gpuTier} />
+      </Suspense3D>
       <h1 className="text-2xl font-bold text-cyber-text">Dashboard</h1>
 
       {/* Metric cards — animated counters with neon glow */}
