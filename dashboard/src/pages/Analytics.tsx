@@ -1,9 +1,41 @@
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   FunnelChart, Funnel, LabelList,
 } from 'recharts';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { NeonTable, type NeonColumn } from '../components/cyber/NeonTable';
 import { useScoreDistribution, useConversionFunnel, useQueryPerformance } from '../hooks/useAnalytics';
+import {
+  TOOLTIP_STYLE, AXIS_STROKE, AXIS_FONT_SIZE, NEON_COLORS, FUNNEL_COLORS,
+} from '../lib/chart-theme';
+
+interface QueryPerf {
+  query_label: string;
+  total_leads: number;
+  avg_score: number;
+  relevant_pct: number;
+}
+
+const queryColumns: NeonColumn<QueryPerf>[] = [
+  { key: 'query_label', header: 'Query' },
+  { key: 'total_leads', header: 'Leads', className: 'font-mono' },
+  {
+    key: 'avg_score',
+    header: 'Avg Score',
+    className: 'font-mono',
+    render: (row) => (
+      <span className="text-cyber-gold">{row.avg_score}</span>
+    ),
+  },
+  {
+    key: 'relevant_pct',
+    header: 'Relevant %',
+    className: 'font-mono',
+    render: (row) => (
+      <span className="text-cyber-orange">{row.relevant_pct}%</span>
+    ),
+  },
+];
 
 export default function Analytics() {
   const { data: scores, isLoading: scoresLoading } = useScoreDistribution();
@@ -12,81 +44,80 @@ export default function Analytics() {
 
   if (scoresLoading) return <LoadingSpinner className="mx-auto mt-20" />;
 
-  const chartStyle = { background: '#1f2937', border: '1px solid #374151', borderRadius: 8 };
-
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Analytics</h1>
+      <h1 className="text-2xl font-bold text-cyber-text">Analytics</h1>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Score Distribution */}
-        <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-          <h2 className="mb-4 text-sm font-medium text-gray-400">Score Distribution</h2>
+        {/* Score Distribution — neon pink→orange gradient bars */}
+        <div className="glass rounded-lg p-4">
+          <h2 className="mb-4 text-sm font-medium text-cyber-text-dim">Score Distribution</h2>
           {scores && scores.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={scores}>
+                <defs>
+                  <linearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={1} />
+                    <stop offset="100%" stopColor={NEON_COLORS.orange} stopOpacity={0.9} />
+                  </linearGradient>
+                </defs>
                 <XAxis
                   dataKey="bucket_min"
-                  stroke="#9ca3af"
-                  fontSize={12}
+                  stroke={AXIS_STROKE}
+                  fontSize={AXIS_FONT_SIZE}
                   tickFormatter={(v: number) => `${v}-${v + 10}`}
                 />
-                <YAxis stroke="#9ca3af" fontSize={12} />
-                <Tooltip contentStyle={chartStyle} labelStyle={{ color: '#e5e7eb' }} />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                <YAxis stroke={AXIS_STROKE} fontSize={AXIS_FONT_SIZE} />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  labelStyle={{ color: TOOLTIP_STYLE.color }}
+                />
+                <Bar dataKey="count" fill="url(#scoreGradient)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-10 text-center text-sm text-gray-500">No score data yet</p>
+            <p className="py-10 text-center text-sm text-cyber-text-dim">No score data yet</p>
           )}
         </div>
 
-        {/* Conversion Funnel */}
-        <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-          <h2 className="mb-4 text-sm font-medium text-gray-400">Conversion Funnel</h2>
+        {/* Conversion Funnel — neon color sequence */}
+        <div className="glass rounded-lg p-4">
+          <h2 className="mb-4 text-sm font-medium text-cyber-text-dim">Conversion Funnel</h2>
           {funnel && funnel.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <FunnelChart>
-                <Tooltip contentStyle={chartStyle} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <Funnel dataKey="count" data={funnel} isAnimationActive>
-                  <LabelList position="right" fill="#e5e7eb" stroke="none" dataKey="stage" fontSize={12} />
+                  <LabelList
+                    position="right"
+                    fill={NEON_COLORS.text}
+                    stroke="none"
+                    dataKey="stage"
+                    fontSize={12}
+                  />
+                  {funnel.map((_entry, index) => (
+                    <Cell
+                      key={`funnel-${index}`}
+                      fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]}
+                    />
+                  ))}
                 </Funnel>
               </FunnelChart>
             </ResponsiveContainer>
           ) : (
-            <p className="py-10 text-center text-sm text-gray-500">No funnel data yet</p>
+            <p className="py-10 text-center text-sm text-cyber-text-dim">No funnel data yet</p>
           )}
         </div>
 
-        {/* Query Performance */}
-        <div className="col-span-full rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-          <h2 className="mb-4 text-sm font-medium text-gray-400">Query Performance</h2>
-          {queryPerf && queryPerf.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-gray-400">
-                  <tr>
-                    <th className="px-4 py-2">Query</th>
-                    <th className="px-4 py-2">Leads</th>
-                    <th className="px-4 py-2">Avg Score</th>
-                    <th className="px-4 py-2">Relevant %</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {queryPerf.map((q) => (
-                    <tr key={q.query_label}>
-                      <td className="px-4 py-2 text-white">{q.query_label}</td>
-                      <td className="px-4 py-2">{q.total_leads}</td>
-                      <td className="px-4 py-2">{q.avg_score}</td>
-                      <td className="px-4 py-2">{q.relevant_pct}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="py-10 text-center text-sm text-gray-500">No query data yet</p>
-          )}
+        {/* Query Performance — NeonTable with glow highlights */}
+        <div className="col-span-full glass rounded-lg p-4">
+          <h2 className="mb-4 text-sm font-medium text-cyber-text-dim">Query Performance</h2>
+          <NeonTable
+            columns={queryColumns}
+            data={queryPerf ?? []}
+            keyField="query_label"
+            emptyMessage="No query data yet"
+          />
         </div>
       </div>
     </div>
