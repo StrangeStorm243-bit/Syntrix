@@ -6,6 +6,7 @@
 @import "./styles/cyberpunk-vars.css";
 @import "./styles/glassmorphism.css";
 @import "./styles/scanlines.css";
+@import "augmented-ui/augmented-ui.min.css";
 
 /* JetBrains Mono variable font for HUD typography */
 @import "@fontsource-variable/jetbrains-mono";

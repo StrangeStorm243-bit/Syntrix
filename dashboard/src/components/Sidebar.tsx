@@ -6,6 +6,7 @@ import {
   BarChart3,
   FlaskConical,
   Settings,
+  Activity,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/queue', icon: MessageSquare, label: 'Queue' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/experiments', icon: FlaskConical, label: 'Experiments' },
+  { to: '/pipeline', icon: Activity, label: 'Pipeline' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

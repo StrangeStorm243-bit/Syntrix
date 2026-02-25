@@ -1,13 +1,9 @@
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-  FunnelChart, Funnel, LabelList,
-} from 'recharts';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { NeonTable, type NeonColumn } from '../components/cyber/NeonTable';
+import { CyberBarChart } from '../components/cyber/CyberBarChart';
+import { CyberFunnelChart } from '../components/cyber/CyberFunnelChart';
 import { useScoreDistribution, useConversionFunnel, useQueryPerformance } from '../hooks/useAnalytics';
-import {
-  TOOLTIP_STYLE, AXIS_STROKE, AXIS_FONT_SIZE, NEON_COLORS, FUNNEL_COLORS,
-} from '../lib/chart-theme';
+import { GRADIENT_IDS } from '../lib/chart-theme';
 
 interface QueryPerf {
   query_label: string;
@@ -50,64 +46,25 @@ export default function Analytics() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Score Distribution — neon pink→orange gradient bars */}
-        <div className="glass rounded-lg p-4">
-          <h2 className="mb-4 text-sm font-medium text-cyber-text-dim">Score Distribution</h2>
-          {scores && scores.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={scores}>
-                <defs>
-                  <linearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={1} />
-                    <stop offset="100%" stopColor={NEON_COLORS.orange} stopOpacity={0.9} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="bucket_min"
-                  stroke={AXIS_STROKE}
-                  fontSize={AXIS_FONT_SIZE}
-                  tickFormatter={(v: number) => `${v}-${v + 10}`}
-                />
-                <YAxis stroke={AXIS_STROKE} fontSize={AXIS_FONT_SIZE} />
-                <Tooltip
-                  contentStyle={TOOLTIP_STYLE}
-                  labelStyle={{ color: TOOLTIP_STYLE.color }}
-                />
-                <Bar dataKey="count" fill="url(#scoreGradient)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="py-10 text-center text-sm text-cyber-text-dim">No score data yet</p>
-          )}
-        </div>
+        <CyberBarChart
+          title="Score Distribution"
+          data={scores ?? []}
+          dataKey="count"
+          xAxisKey="bucket_min"
+          fillMode="gradient"
+          gradientId={GRADIENT_IDS.orangeGold}
+          tickFormatter={(v: unknown) => `${v}-${Number(v) + 10}`}
+          emptyMessage="No score data yet"
+        />
 
         {/* Conversion Funnel — neon color sequence */}
-        <div className="glass rounded-lg p-4">
-          <h2 className="mb-4 text-sm font-medium text-cyber-text-dim">Conversion Funnel</h2>
-          {funnel && funnel.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <FunnelChart>
-                <Tooltip contentStyle={TOOLTIP_STYLE} />
-                <Funnel dataKey="count" data={funnel} isAnimationActive>
-                  <LabelList
-                    position="right"
-                    fill={NEON_COLORS.text}
-                    stroke="none"
-                    dataKey="stage"
-                    fontSize={12}
-                  />
-                  {funnel.map((_entry, index) => (
-                    <Cell
-                      key={`funnel-${index}`}
-                      fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]}
-                    />
-                  ))}
-                </Funnel>
-              </FunnelChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="py-10 text-center text-sm text-cyber-text-dim">No funnel data yet</p>
-          )}
-        </div>
+        <CyberFunnelChart
+          title="Conversion Funnel"
+          data={funnel ?? []}
+          dataKey="count"
+          labelKey="stage"
+          emptyMessage="No funnel data yet"
+        />
 
         {/* Query Performance — NeonTable with glow highlights */}
         <div className="col-span-full glass rounded-lg p-4">

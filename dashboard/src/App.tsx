@@ -7,6 +7,7 @@ import Queue from './pages/Queue';
 import Analytics from './pages/Analytics';
 import Experiments from './pages/Experiments';
 import Settings from './pages/Settings';
+import PipelineLive from './pages/PipelineLive';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="analytics" element={<Analytics />} />
             <Route path="experiments" element={<Experiments />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="pipeline" element={<PipelineLive />} />
           </Route>
         </Routes>
       </BrowserRouter>

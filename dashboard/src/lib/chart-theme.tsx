@@ -45,3 +45,30 @@ export const FUNNEL_COLORS = [
   'oklch(0.800 0.188 67)',     // orange-gold blend
   'oklch(0.887 0.182 95.3)',   // gold
 ];
+
+/**
+ * Shared SVG gradient definitions for all neon charts.
+ * Drop inside `<defs><NeonGradientDefs /></defs>` in any Recharts chart.
+ */
+export function NeonGradientDefs() {
+  return (
+    <>
+      <linearGradient id={GRADIENT_IDS.pinkOrange} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={1} />
+        <stop offset="100%" stopColor={NEON_COLORS.orange} stopOpacity={0.8} />
+      </linearGradient>
+      <linearGradient id={GRADIENT_IDS.orangeGold} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={1} />
+        <stop offset="100%" stopColor={NEON_COLORS.orange} stopOpacity={0.9} />
+      </linearGradient>
+      <linearGradient id={GRADIENT_IDS.pink} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={1} />
+        <stop offset="100%" stopColor={NEON_COLORS.pinkDim} stopOpacity={0.7} />
+      </linearGradient>
+      <linearGradient id={GRADIENT_IDS.gold} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={NEON_COLORS.gold} stopOpacity={1} />
+        <stop offset="100%" stopColor={NEON_COLORS.orangeDim} stopOpacity={0.7} />
+      </linearGradient>
+    </>
+  );
+}
