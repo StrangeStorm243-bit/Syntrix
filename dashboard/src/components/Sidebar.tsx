@@ -24,7 +24,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-gray-700 bg-gray-900">
       <div className="flex h-14 items-center px-4 border-b border-gray-700">
-        <span className="text-lg font-bold text-white">SignalOps</span>
+        <span className="text-lg font-bold text-white">Syntrix</span>
       </div>
       <nav className="flex-1 space-y-1 p-2">
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => (

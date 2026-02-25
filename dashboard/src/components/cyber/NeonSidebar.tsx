@@ -39,7 +39,7 @@ export function NeonSidebar() {
               '0 0 8px var(--cyber-glow-pink), 0 0 20px var(--cyber-glow-pink)',
           }}
         >
-          SignalOps
+          Syntrix
         </span>
       </div>
 

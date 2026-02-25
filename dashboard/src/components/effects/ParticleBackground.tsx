@@ -7,9 +7,9 @@ import { usePerformanceMode } from '../../hooks/usePerformanceMode';
 
 function getParticleCount(): number {
   const width = window.innerWidth;
-  if (width >= 1024) return 100;
-  if (width >= 768) return 50;
-  return 30;
+  if (width >= 1024) return 180;
+  if (width >= 768) return 100;
+  return 60;
 }
 
 export function ParticleBackground() {
@@ -26,50 +26,60 @@ export function ParticleBackground() {
   }, []);
 
   const particlesLoaded = useCallback(async () => {
-    // no-op: container available here if needed in the future
+    // no-op
   }, []);
 
   const fullOptions: ISourceOptions = {
     background: {
-      color: {
-        value: 'transparent',
-      },
+      color: { value: 'transparent' },
     },
     fpsLimit: 60,
     particles: {
       number: {
         value: getParticleCount(),
-        density: {
-          enable: false,
-        },
+        density: { enable: false },
       },
       color: {
-        value: '#ff1493',
+        value: ['#ff1493', '#ff4040', '#ff6b35', '#9b30ff', '#c850c0'],
       },
-      shape: {
-        type: 'circle',
-      },
+      shape: { type: 'circle' },
       opacity: {
-        value: 0.3,
+        value: { min: 0.15, max: 0.6 },
+        animation: {
+          enable: true,
+          speed: 0.8,
+          sync: false,
+        },
       },
       size: {
-        value: { min: 1, max: 3 },
+        value: { min: 1, max: 4 },
+        animation: {
+          enable: true,
+          speed: 2,
+          sync: false,
+        },
       },
       links: {
         enable: true,
-        distance: 150,
-        color: '#ff1493',
-        opacity: 0.1,
+        distance: 140,
+        color: { value: '#ff1493' },
+        opacity: 0.12,
         width: 1,
+        triangles: {
+          enable: true,
+          opacity: 0.02,
+        },
       },
       move: {
         enable: true,
-        speed: 0.3,
-        direction: 'top',
+        speed: { min: 0.8, max: 2.5 },
+        direction: 'none',
         random: true,
         straight: false,
-        outModes: {
-          default: 'out',
+        outModes: { default: 'bounce' },
+        attract: {
+          enable: true,
+          rotate: { x: 600, y: 1200 },
         },
       },
     },
@@ -77,13 +87,20 @@ export function ParticleBackground() {
       events: {
         onHover: {
           enable: true,
-          mode: 'repulse',
+          mode: ['grab', 'repulse'],
         },
       },
       modes: {
+        grab: {
+          distance: 180,
+          links: {
+            opacity: 0.35,
+            color: '#ff6b35',
+          },
+        },
         repulse: {
-          distance: 100,
-          duration: 0.4,
+          distance: 80,
+          duration: 0.3,
         },
       },
     },
@@ -92,42 +109,26 @@ export function ParticleBackground() {
 
   const reducedOptions: ISourceOptions = {
     background: {
-      color: {
-        value: 'transparent',
-      },
+      color: { value: 'transparent' },
     },
     fpsLimit: 30,
     particles: {
       number: {
-        value: getParticleCount(),
-        density: {
-          enable: false,
-        },
+        value: Math.round(getParticleCount() * 0.5),
+        density: { enable: false },
       },
       color: {
-        value: '#ff1493',
+        value: ['#ff1493', '#ff4040', '#ff6b35', '#9b30ff', '#c850c0'],
       },
-      shape: {
-        type: 'circle',
-      },
-      opacity: {
-        value: 0.3,
-      },
-      size: {
-        value: { min: 1, max: 3 },
-      },
-      links: {
-        enable: false,
-      },
-      move: {
-        enable: false,
-      },
+      shape: { type: 'circle' },
+      opacity: { value: 0.3 },
+      size: { value: { min: 1, max: 3 } },
+      links: { enable: false },
+      move: { enable: false },
     },
     interactivity: {
       events: {
-        onHover: {
-          enable: false,
-        },
+        onHover: { enable: false },
       },
     },
     detectRetina: true,

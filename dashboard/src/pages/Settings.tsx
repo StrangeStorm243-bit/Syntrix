@@ -30,7 +30,7 @@ export default function Settings() {
               type="password"
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              placeholder="Enter your SignalOps API key"
+              placeholder="Enter your Syntrix API key"
             />
             <NeonButton onClick={handleSave}>
               {saved ? 'Saved!' : 'Save'}

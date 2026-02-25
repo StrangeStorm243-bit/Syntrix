@@ -9,11 +9,11 @@ export class ApiError extends Error {
 }
 
 function getApiKey(): string {
-  return localStorage.getItem('signalops_api_key') || '';
+  return localStorage.getItem('syntrix_api_key') || '';
 }
 
 export function setApiKey(key: string): void {
-  localStorage.setItem('signalops_api_key', key);
+  localStorage.setItem('syntrix_api_key', key);
 }
 
 export function getStoredApiKey(): string {

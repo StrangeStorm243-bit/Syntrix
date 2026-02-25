@@ -5,7 +5,7 @@ export type WsMessage =
 
 type Listener = (msg: WsMessage) => void;
 
-export class SignalOpsWebSocket {
+export class SyntrixWebSocket {
   private ws: WebSocket | null = null;
   private listeners: Listener[] = [];
   private reconnectDelay = 1000;
@@ -52,4 +52,4 @@ export class SignalOpsWebSocket {
   }
 }
 
-export const wsClient = new SignalOpsWebSocket();
+export const wsClient = new SyntrixWebSocket();

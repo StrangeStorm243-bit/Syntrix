@@ -14,11 +14,11 @@ vi.mock('./api', async () => {
   }
 
   function getApiKey(): string {
-    return store['signalops_api_key'] || '';
+    return store['syntrix_api_key'] || '';
   }
 
   function setApiKey(key: string): void {
-    store['signalops_api_key'] = key;
+    store['syntrix_api_key'] = key;
   }
 
   function getStoredApiKey(): string {
