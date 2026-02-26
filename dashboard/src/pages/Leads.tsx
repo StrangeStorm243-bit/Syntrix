@@ -52,7 +52,7 @@ export default function Leads() {
                   <th className="px-4 py-3">Text</th>
                   <th className="px-4 py-3">Score</th>
                   <th className="px-4 py-3">Judgment</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Sequence</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
@@ -66,7 +66,20 @@ export default function Leads() {
                     </td>
                     <td className="px-4 py-3"><ScoreBadge score={lead.score} /></td>
                     <td className="px-4 py-3"><JudgmentBadge label={lead.judgment_label} /></td>
-                    <td className="px-4 py-3 text-gray-400">{lead.draft_status || '--'}</td>
+                    <td className="px-4 py-3">
+                      {lead.enrollment_status ? (
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          lead.enrollment_status === 'active' ? 'bg-blue-500/20 text-blue-400' :
+                          lead.enrollment_status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                          lead.enrollment_status === 'paused' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {lead.enrollment_status}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">--</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

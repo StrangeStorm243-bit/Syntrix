@@ -15,6 +15,7 @@ from signalops.api.schemas import (
 )
 from signalops.storage.database import (
     Draft,
+    Enrollment,
     Judgment,
     JudgmentLabel,
     NormalizedPost,
@@ -29,6 +30,7 @@ def _build_lead_response(
     judgment: Judgment | None,
     score: Score | None,
     draft: Draft | None,
+    enrollment: Enrollment | None = None,
 ) -> LeadResponse:
     return LeadResponse(
         id=int(post.id),
@@ -47,6 +49,13 @@ def _build_lead_response(
             float(judgment.confidence) if judgment and judgment.confidence else None
         ),
         draft_status=draft.status.value if draft and draft.status else None,
+        enrollment_status=(
+            enrollment.status.value
+            if enrollment and hasattr(enrollment.status, "value")
+            else str(enrollment.status)
+            if enrollment
+            else None
+        ),
     )
 
 
@@ -100,7 +109,8 @@ def list_leads(
         judgment = db.query(Judgment).filter(Judgment.normalized_post_id == post.id).first()
         score = db.query(Score).filter(Score.normalized_post_id == post.id).first()
         draft = db.query(Draft).filter(Draft.normalized_post_id == post.id).first()
-        items.append(_build_lead_response(post, judgment, score, draft))
+        enrollment = db.query(Enrollment).filter(Enrollment.normalized_post_id == post.id).first()
+        items.append(_build_lead_response(post, judgment, score, draft, enrollment))
 
     return PaginatedResponse(
         items=items,
@@ -128,7 +138,8 @@ def top_leads(
         judgment = db.query(Judgment).filter(Judgment.normalized_post_id == post.id).first()
         score = db.query(Score).filter(Score.normalized_post_id == post.id).first()
         draft = db.query(Draft).filter(Draft.normalized_post_id == post.id).first()
-        results.append(_build_lead_response(post, judgment, score, draft))
+        enrollment = db.query(Enrollment).filter(Enrollment.normalized_post_id == post.id).first()
+        results.append(_build_lead_response(post, judgment, score, draft, enrollment))
     return results
 
 
@@ -148,6 +159,7 @@ def get_lead(
     judgment = db.query(Judgment).filter(Judgment.normalized_post_id == post.id).first()
     score = db.query(Score).filter(Score.normalized_post_id == post.id).first()
     draft = db.query(Draft).filter(Draft.normalized_post_id == post.id).first()
+    enrollment = db.query(Enrollment).filter(Enrollment.normalized_post_id == post.id).first()
 
     return LeadDetailResponse(
         id=int(post.id),
@@ -166,6 +178,13 @@ def get_lead(
             float(judgment.confidence) if judgment and judgment.confidence else None
         ),
         draft_status=draft.status.value if draft and draft.status else None,
+        enrollment_status=(
+            enrollment.status.value
+            if enrollment and hasattr(enrollment.status, "value")
+            else str(enrollment.status)
+            if enrollment
+            else None
+        ),
         judgment_reasoning=(str(judgment.reasoning) if judgment and judgment.reasoning else None),
         score_components=score.components if score else None,  # type: ignore[arg-type]
         draft_text=(str(draft.text_final or draft.text_generated) if draft else None),

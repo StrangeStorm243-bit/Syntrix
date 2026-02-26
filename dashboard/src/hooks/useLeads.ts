@@ -16,6 +16,7 @@ export interface Lead {
   judgment_label: string | null;
   judgment_confidence: number | null;
   draft_status: string | null;
+  enrollment_status: string | null;
 }
 
 export interface PaginatedLeads {

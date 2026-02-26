@@ -70,6 +70,7 @@ class LeadResponse(BaseModel):
     judgment_label: str | None = None
     judgment_confidence: float | None = None
     draft_status: str | None = None
+    enrollment_status: str | None = None
 
 
 class LeadDetailResponse(LeadResponse):

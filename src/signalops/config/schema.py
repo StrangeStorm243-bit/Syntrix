@@ -164,6 +164,15 @@ class LLMConfig(BaseModel):
     max_judge_latency_ms: float = 5000
 
 
+class TwikitConfig(BaseModel):
+    """Twikit (free Twitter access) credential config."""
+
+    username: str | None = None
+    password: str | None = None
+    email: str | None = None
+    cookie_path: str = "twikit_cookies.json"
+
+
 class ExperimentConfig(BaseModel):
     """A/B testing configuration."""
 
@@ -191,6 +200,7 @@ class ProjectConfig(BaseModel):
     platforms: PlatformsConfig = PlatformsConfig()
     rate_limits: dict[str, Any] = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
     llm: LLMConfig = LLMConfig()
+    twikit: TwikitConfig = TwikitConfig()
     experiments: ExperimentConfig = ExperimentConfig()
 
     @field_validator("llm", mode="before")
