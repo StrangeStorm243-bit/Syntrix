@@ -91,7 +91,7 @@ export function TerminalShowcase() {
             </span>
           </h2>
           <p className="mt-4 font-body text-lg text-slate-500">
-            Real CLI output from the Syntrix pipeline.
+            Real CLI output from a Syntrix pipeline run on X.
           </p>
         </div>
 

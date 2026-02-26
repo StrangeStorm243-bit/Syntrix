@@ -19,7 +19,7 @@ const FEATURES = [
   {
     icon: Brain,
     title: "LLM-Powered Judging",
-    desc: "Claude or GPT classifies tweet relevance with structured confidence scores and reasoning.",
+    desc: "Any LLM (via LiteLLM) classifies tweet relevance with structured confidence scores and reasoning. Supports 100+ providers.",
     gradient: "from-aurora-cyan to-aurora-blue",
   },
   {
@@ -43,7 +43,7 @@ const FEATURES = [
   {
     icon: MessageCircle,
     title: "DM Outreach",
-    desc: "Send direct messages to leads as part of configurable outreach sequences. Reply first, then DM, or go cold — your choice.",
+    desc: "Send DMs on X as part of multi-step outreach sequences. Like, follow, reply, then DM — or go cold. Rate-limited with jitter.",
     gradient: "from-aurora-blue to-aurora-magenta",
   },
   {
@@ -70,7 +70,7 @@ export function Features() {
             </span>
           </h2>
           <p className="mt-4 font-body text-lg text-slate-400">
-            Everything you need to find high-intent leads and engage them
+            Everything you need to find high-intent leads on X and engage them
             intelligently.
           </p>
         </div>

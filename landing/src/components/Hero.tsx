@@ -54,8 +54,8 @@ export function Hero() {
 
           {/* Subheadline */}
           <p className="mt-6 max-w-2xl font-body text-lg text-slate-400 sm:text-xl">
-            Open-source lead finder that collects tweets, judges relevance via LLM,
-            scores leads, drafts outreach, and sends DMs — all from a self-hosted dashboard.
+            Open-source lead finder for X (Twitter) that scores tweets with AI,
+            drafts personalized replies and DMs, and sends human-approved outreach — all from a self-hosted dashboard.
           </p>
 
           {/* CTA row */}

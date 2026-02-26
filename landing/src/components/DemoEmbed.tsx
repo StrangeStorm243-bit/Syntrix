@@ -47,7 +47,7 @@ export function DemoEmbed() {
         {/* Heading */}
         <div className="mb-12 text-center">
           <h2 className="font-heading text-3xl font-bold text-white sm:text-4xl">
-            See how Syntrix turns tweets into{" "}
+            See how Syntrix turns X posts into{" "}
             <span className="bg-gradient-to-r from-aurora-cyan to-aurora-magenta bg-clip-text text-transparent">
               customers
             </span>
