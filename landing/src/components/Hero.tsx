@@ -35,8 +35,8 @@ export function Hero() {
         <HeroScene />
       </Suspense>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6">
-        <div className="flex flex-col items-center text-center">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pointer-events-none">
+        <div className="flex flex-col items-center text-center [&_button]:pointer-events-auto [&_a]:pointer-events-auto">
           {/* Version badge */}
           <div className="mb-8 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-mono text-slate-400">
             <span className="mr-2 h-1.5 w-1.5 rounded-full bg-cta-green" />

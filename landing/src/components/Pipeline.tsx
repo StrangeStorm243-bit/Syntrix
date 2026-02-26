@@ -1,3 +1,6 @@
+"use client";
+
+import { lazy, Suspense } from "react";
 import {
   Search,
   FileText,
@@ -8,6 +11,10 @@ import {
   Send,
   MessageCircle,
 } from "lucide-react";
+
+const PipelineScene = lazy(() =>
+  import("./PipelineScene").then((m) => ({ default: m.PipelineScene }))
+);
 
 const STAGES = [
   {
@@ -63,7 +70,10 @@ const STAGES = [
 export function Pipeline() {
   return (
     <section id="pipeline" className="relative py-24">
-      <div className="mx-auto max-w-7xl px-6">
+      <Suspense fallback={null}>
+        <PipelineScene />
+      </Suspense>
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pointer-events-none">
         {/* Section header */}
         <div className="mb-16 text-center">
           <h2 className="font-heading text-3xl font-bold text-white sm:text-4xl">

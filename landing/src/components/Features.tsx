@@ -60,7 +60,7 @@ export function Features() {
       <Suspense fallback={null}>
         <FloatingOrbs />
       </Suspense>
-      <div className="relative z-10 mx-auto max-w-7xl px-6">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
         {/* Section header */}
         <div className="mb-16 text-center">
           <h2 className="font-heading text-3xl font-bold text-white sm:text-4xl">
