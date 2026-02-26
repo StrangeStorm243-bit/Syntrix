@@ -24,7 +24,7 @@ router = APIRouter()
 def list_experiments(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[ExperimentResponse]:
     """List A/B experiments."""
     # Dynamically check if the table exists (safe for pre-T2 merge)
@@ -62,7 +62,7 @@ def list_experiments(
 def create_experiment(
     body: ExperimentCreateRequest,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ExperimentResponse:
     """Create a new A/B experiment."""
     from fastapi import HTTPException
@@ -124,7 +124,7 @@ def create_experiment(
 def get_experiment(
     experiment_id: str,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ExperimentResponse:
     """Get experiment detail."""
     from fastapi import HTTPException
@@ -159,7 +159,7 @@ def get_experiment(
 def stop_experiment(
     experiment_id: str,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ExperimentResponse:
     """Stop a running experiment."""
     from fastapi import HTTPException
@@ -212,7 +212,7 @@ def stop_experiment(
 def get_experiment_results(
     experiment_id: str,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ExperimentResultsResponse:
     """Statistical comparison of A/B experiment results."""
     from fastapi import HTTPException

@@ -60,7 +60,7 @@ def list_leads(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> PaginatedResponse[LeadResponse]:
     """List leads with filtering and pagination."""
     query = db.query(NormalizedPost)
@@ -115,7 +115,7 @@ def top_leads(
     project_id: str | None = Query(None),
     limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[LeadResponse]:
     """Get top N leads by score."""
     query = db.query(NormalizedPost).join(Score, Score.normalized_post_id == NormalizedPost.id)
@@ -136,7 +136,7 @@ def top_leads(
 def get_lead(
     lead_id: int,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> LeadDetailResponse:
     """Get lead detail with full judgment, score, and draft info."""
     from fastapi import HTTPException

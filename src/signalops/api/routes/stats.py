@@ -31,7 +31,7 @@ router = APIRouter()
 def pipeline_stats(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> PipelineStatsResponse:
     """Overall pipeline statistics."""
 
@@ -61,7 +61,7 @@ def stats_timeline(
     project_id: str | None = Query(None),
     granularity: str = Query("daily"),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[TimelineBucket]:
     """Stats over time in daily buckets."""
     # SQLite date formatting
@@ -92,7 +92,7 @@ def stats_timeline(
 def outcome_breakdown(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[OutcomeBreakdown]:
     """Outcome type breakdown."""
     query = db.query(

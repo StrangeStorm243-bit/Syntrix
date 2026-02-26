@@ -44,9 +44,13 @@ def client() -> Iterator[TestClient]:
 
 
 class TestApiKeyAuth:
-    def test_missing_api_key_returns_401(self, client: TestClient) -> None:
-        resp = client.get("/api/projects")
-        assert resp.status_code in (401, 422)  # 422 if header missing
+    def test_no_api_key_configured_allows_open_access(self, client: TestClient) -> None:
+        """When SIGNALOPS_API_KEY is not set, requests pass without auth."""
+        with patch.dict(os.environ, {}, clear=False):
+            # Ensure no SIGNALOPS_API_KEY is set
+            os.environ.pop("SIGNALOPS_API_KEY", None)
+            resp = client.get("/api/projects")
+            assert resp.status_code == 200
 
     def test_invalid_api_key_returns_401(self, client: TestClient) -> None:
         with patch.dict(os.environ, {"SIGNALOPS_API_KEY": "valid-key"}):
@@ -64,10 +68,17 @@ class TestApiKeyAuth:
             )
             assert resp.status_code == 200
 
-    def test_empty_env_key_rejects_all(self, client: TestClient) -> None:
+    def test_missing_header_when_key_required_returns_401(self, client: TestClient) -> None:
+        """When SIGNALOPS_API_KEY is set but no header sent, returns 401."""
+        with patch.dict(os.environ, {"SIGNALOPS_API_KEY": "valid-key"}):
+            resp = client.get("/api/projects")
+            assert resp.status_code == 401
+
+    def test_empty_env_key_allows_open_access(self, client: TestClient) -> None:
+        """Empty SIGNALOPS_API_KEY means open access (self-hosted mode)."""
         with patch.dict(os.environ, {"SIGNALOPS_API_KEY": ""}):
             resp = client.get(
                 "/api/projects",
                 headers={"X-API-Key": "anything"},
             )
-            assert resp.status_code == 401
+            assert resp.status_code == 200

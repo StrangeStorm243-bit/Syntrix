@@ -33,7 +33,7 @@ def score_distribution(
     project_id: str | None = Query(None),
     bucket_size: float = Query(10.0, gt=0),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[ScoreDistributionBucket]:
     """Histogram of lead scores."""
     query = db.query(Score.total_score)
@@ -66,7 +66,7 @@ def score_distribution(
 def judge_accuracy(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> dict[str, object]:
     """Precision/recall from human corrections."""
     query = db.query(Judgment).filter(Judgment.human_label.isnot(None))
@@ -89,7 +89,7 @@ def judge_accuracy(
 def query_performance(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[QueryPerformanceRow]:
     """Which queries produce the best leads."""
     query = (
@@ -132,7 +132,7 @@ def query_performance(
 def persona_effectiveness(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[PersonaEffectivenessRow]:
     """Draft approval rates by persona (tone / template)."""
     query = db.query(
@@ -178,7 +178,7 @@ def persona_effectiveness(
 def conversion_funnel(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[ConversionFunnelStep]:
     """Pipeline conversion funnel: Collected -> Judged -> Scored -> Drafted -> Sent -> Outcome."""
 

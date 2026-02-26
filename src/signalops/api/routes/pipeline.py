@@ -26,16 +26,50 @@ async def _broadcast_progress(stage: str, progress: float, detail: str) -> None:
 
 
 def _run_pipeline_sync(project_id: str, db_url: str) -> None:
-    """Run the pipeline synchronously in a background thread.
+    """Run the pipeline synchronously in a background thread."""
+    from signalops.config.loader import load_project
+    from signalops.connectors.factory import ConnectorFactory
+    from signalops.models.draft_model import LLMDraftGenerator
+    from signalops.models.judge_model import LLMPromptJudge
+    from signalops.models.llm_gateway import LLMGateway
+    from signalops.pipeline.orchestrator import PipelineOrchestrator
+    from signalops.storage.database import get_engine, get_session
 
-    Imports orchestrator lazily to avoid circular deps.
-    This is a placeholder — the actual orchestrator integration
-    will be wired during Phase 3 integration.
-    """
     logger.info("Pipeline run started for project %s", project_id)
-    # TODO: Wire to PipelineOrchestrator with progress_callback
-    # The orchestrator will call _broadcast_progress at each stage
-    logger.info("Pipeline run completed for project %s", project_id)
+    engine = get_engine(db_url)
+    session = get_session(engine)
+    try:
+        # Load config from project's yaml path
+        project = session.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            logger.error("Project %s not found in database", project_id)
+            return
+        config = load_project(str(project.config_path))
+
+        # Create connector (prefers twikit if env vars set, else X API)
+        factory = ConnectorFactory()
+        connector = factory.create("x", config)
+
+        # Create LLM judge and drafter
+        gateway = LLMGateway()
+        judge_model = getattr(config.llm, "judge_model", "claude-sonnet-4-6")
+        draft_model = getattr(config.llm, "draft_model", "claude-sonnet-4-6")
+        judge = LLMPromptJudge(gateway=gateway, model=judge_model)
+        drafter = LLMDraftGenerator(gateway=gateway, model=draft_model)
+
+        orchestrator = PipelineOrchestrator(
+            db_session=session,
+            connector=connector,
+            judge=judge,
+            draft_generator=drafter,
+        )
+        results = orchestrator.run_all(config)
+        logger.info("Pipeline completed for %s: %s", project_id, results)
+    except Exception:
+        logger.exception("Pipeline run failed for project %s", project_id)
+    finally:
+        session.close()
+        engine.dispose()
 
 
 @router.post("/run")
@@ -43,7 +77,7 @@ async def run_pipeline(
     project_id: str | None = None,
     background_tasks: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> dict[str, Any]:
     """Trigger a pipeline run in the background."""
     # Resolve project

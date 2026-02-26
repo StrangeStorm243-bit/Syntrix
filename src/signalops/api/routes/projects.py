@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("", response_model=list[ProjectResponse])
 def list_projects(
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[ProjectResponse]:
     """List all projects."""
     projects = db.query(Project).all()
@@ -38,7 +38,7 @@ def list_projects(
 def get_project(
     project_id: str,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ProjectResponse:
     """Get project details."""
     from fastapi import HTTPException
@@ -60,7 +60,7 @@ def get_project(
 def get_project_config(
     project_id: str,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ProjectConfigResponse:
     """Get sanitized project config (no secrets)."""
     from fastapi import HTTPException
@@ -83,7 +83,7 @@ def get_project_config(
 def activate_project(
     project_id: str,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> ProjectResponse:
     """Set a project as the active project (deactivates others)."""
     from fastapi import HTTPException

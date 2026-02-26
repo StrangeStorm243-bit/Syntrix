@@ -27,7 +27,7 @@ def get_db(request: Request) -> Generator[Session, None, None]:
 def get_current_project(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> Project:
     """Resolve the active project from query param or fall back to the single active one."""
     if project_id:

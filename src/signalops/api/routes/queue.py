@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from signalops.api.auth import require_api_key
 from signalops.api.deps import get_db
@@ -64,7 +67,7 @@ def list_queue(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> PaginatedResponse[DraftResponse]:
     """List drafts in the approval queue."""
     query = db.query(Draft)
@@ -95,7 +98,7 @@ def list_queue(
 def get_draft(
     draft_id: int,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> DraftResponse:
     """Get draft detail."""
     draft = db.query(Draft).filter(Draft.id == draft_id).first()
@@ -108,7 +111,7 @@ def get_draft(
 def approve_draft(
     draft_id: int,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> DraftResponse:
     """Approve a pending draft."""
     draft = db.query(Draft).filter(Draft.id == draft_id).first()
@@ -132,7 +135,7 @@ def edit_draft(
     draft_id: int,
     body: DraftEditRequest,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> DraftResponse:
     """Edit and approve a draft."""
     draft = db.query(Draft).filter(Draft.id == draft_id).first()
@@ -156,7 +159,7 @@ def reject_draft(
     draft_id: int,
     body: DraftRejectRequest | None = None,
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> DraftResponse:
     """Reject a draft."""
     draft = db.query(Draft).filter(Draft.id == draft_id).first()
@@ -177,7 +180,7 @@ def reject_draft(
 def send_preview(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> list[SendPreviewItem]:
     """Dry-run preview of drafts that would be sent."""
     query = db.query(Draft).filter(Draft.status.in_([DraftStatus.APPROVED, DraftStatus.EDITED]))
@@ -206,14 +209,11 @@ def send_preview(
 def send_approved(
     project_id: str | None = Query(None),
     db: Session = Depends(get_db),
-    _api_key: str = Depends(require_api_key),
+    _api_key: str | None = Depends(require_api_key),
 ) -> SendResult:
-    """Send all approved/edited drafts.
+    """Send all approved/edited drafts via connector."""
+    from signalops.connectors.factory import ConnectorFactory
 
-    Marks drafts as SENT and records sent_at timestamp.
-    Actual delivery is handled by the sender pipeline stage
-    which will be wired in Phase 3 integration.
-    """
     query = db.query(Draft).filter(Draft.status.in_([DraftStatus.APPROVED, DraftStatus.EDITED]))
     if project_id:
         query = query.filter(Draft.project_id == project_id)
@@ -222,12 +222,32 @@ def send_approved(
     sent_ids: list[int] = []
     failed_count = 0
 
+    # Create connector for sending
+    factory = ConnectorFactory()
+    try:
+        connector = factory.create("x")
+    except Exception:  # noqa: BLE001
+        logger.warning("No connector available — marking as sent (dry run)")
+        connector = None
+
     for draft in drafts:
         try:
+            text = str(draft.text_final or draft.text_generated)
+            post = db.query(NormalizedPost).filter(
+                NormalizedPost.id == draft.normalized_post_id
+            ).first()
+
+            if connector and post:
+                reply_id = connector.post_reply(
+                    str(post.platform_id), text
+                )
+                draft.sent_post_id = reply_id  # type: ignore[assignment]
+
             draft.status = DraftStatus.SENT  # type: ignore[assignment]
             draft.sent_at = datetime.now(UTC)  # type: ignore[assignment]
-            sent_ids.append(int(draft.id))
+            sent_ids.append(int(draft.id))  # type: ignore[arg-type]
         except Exception:  # noqa: BLE001
+            logger.exception("Failed to send draft %s", draft.id)
             failed_count += 1
 
     db.commit()

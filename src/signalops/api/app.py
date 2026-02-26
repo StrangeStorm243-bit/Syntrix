@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +18,31 @@ from signalops.api.routes.pipeline import router as pipeline_router
 from signalops.api.routes.projects import router as projects_router
 from signalops.api.routes.queue import router as queue_router
 from signalops.api.routes.stats import router as stats_router
-from signalops.storage.database import get_engine
+from signalops.storage.database import get_engine, init_db
+
+logger = logging.getLogger(__name__)
+
+
+def _tick_sequences(db_url: str) -> None:
+    """Execute due sequence steps (called by APScheduler)."""
+    try:
+        from signalops.connectors.factory import ConnectorFactory
+        from signalops.pipeline.sequence_engine import SequenceEngine
+        from signalops.storage.database import get_engine as _get_engine
+        from signalops.storage.database import get_session
+
+        engine = _get_engine(db_url)
+        session = get_session(engine)
+        factory = ConnectorFactory()
+        connector = factory.create("x")
+        seq_engine = SequenceEngine(session, connector)
+        count = seq_engine.execute_due_steps()
+        if count:
+            logger.info("Executed %d sequence steps", count)
+        session.close()
+        engine.dispose()
+    except Exception:  # noqa: BLE001
+        logger.debug("Sequence tick skipped — no connector or no due steps")
 
 
 @asynccontextmanager
@@ -24,7 +50,31 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialize DB engine on startup, dispose on shutdown."""
     db_url = os.environ.get("SIGNALOPS_DB_URL", "sqlite:///signalops.db")
     app.state.engine = get_engine(db_url)
+    init_db(app.state.engine)
+
+    # Start APScheduler for periodic pipeline runs (optional)
+    scheduler: Any = None
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore[import-untyped]
+
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(
+            _tick_sequences,
+            "interval",
+            seconds=30,
+            args=[db_url],
+            id="sequence_tick",
+        )
+        scheduler.start()
+        app.state.scheduler = scheduler
+        logger.info("APScheduler started — sequence tick every 30s")
+    except ImportError:
+        logger.info("APScheduler not installed — no background scheduling")
+
     yield
+
+    if scheduler is not None:
+        scheduler.shutdown()
     app.state.engine.dispose()
 
 

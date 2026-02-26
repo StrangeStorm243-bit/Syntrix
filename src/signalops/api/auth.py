@@ -8,10 +8,12 @@ from fastapi import Header, HTTPException
 
 
 async def require_api_key(
-    x_api_key: str = Header(..., alias="X-API-Key"),
-) -> str:
-    """Validate the X-API-Key header against SIGNALOPS_API_KEY env var."""
+    x_api_key: str | None = Header(None, alias="X-API-Key"),
+) -> str | None:
+    """Validate X-API-Key if SIGNALOPS_API_KEY is set. Skip if not configured."""
     expected = os.environ.get("SIGNALOPS_API_KEY", "")
-    if not expected or x_api_key != expected:
+    if not expected:
+        return None  # No API key configured — open access (self-hosted mode)
+    if not x_api_key or x_api_key != expected:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return x_api_key
