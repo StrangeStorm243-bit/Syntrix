@@ -324,6 +324,76 @@ class TestSequenceEngine:
         self.session.refresh(enrollment)
         assert enrollment.current_step_order == 0  # Did not advance
 
+    def test_dm_step_executes(self) -> None:
+        """DM action type should call connector.send_dm."""
+        connector = _make_connector()
+        connector.send_dm = MagicMock(return_value=True)
+        engine = SequenceEngine(self.session, connector)
+
+        seq = Sequence(project_id="test", name="Cold DM")
+        self.session.add(seq)
+        self.session.flush()
+        self.session.add(
+            SequenceStep(
+                sequence_id=seq.id,
+                step_order=1,
+                action_type="dm",
+                delay_hours=0,
+                config_json='{"dm_text": "Hey, saw your tweet and wanted to reach out!"}',
+            ),
+        )
+        self.session.commit()
+
+        enrollment = engine.enroll(self.norm_id, seq.id, "test")
+        enrollment.next_step_at = datetime.now(UTC) - timedelta(minutes=1)
+        self.session.commit()
+
+        count = engine.execute_due_steps()
+        assert count == 1
+        connector.send_dm.assert_called_once()
+
+    def test_dm_rate_limit(self) -> None:
+        """DM actions should respect max_dms_per_day rate limit."""
+        connector = _make_connector()
+        connector.send_dm = MagicMock(return_value=True)
+        engine = SequenceEngine(self.session, connector, max_dms_per_day=1)
+
+        seq = Sequence(project_id="test", name="DM Seq")
+        self.session.add(seq)
+        self.session.flush()
+        self.session.add(
+            SequenceStep(
+                sequence_id=seq.id, step_order=1, action_type="dm", delay_hours=0,
+            ),
+        )
+        self.session.commit()
+
+        enrollment_prev = engine.enroll(self.norm_id, seq.id, "test")
+        exec_record = StepExecution(
+            enrollment_id=enrollment_prev.id, step_id=1, action_type="dm",
+            status="executed", executed_at=datetime.now(UTC) - timedelta(hours=1),
+        )
+        self.session.add(exec_record)
+        self.session.commit()
+
+        raw2 = RawPost(project_id="test", platform="x", platform_id="tw2", raw_json={})
+        self.session.add(raw2)
+        self.session.flush()
+        norm2 = NormalizedPost(
+            raw_post_id=raw2.id, project_id="test", platform="x", platform_id="tw2",
+            author_id="u2", author_username="user2", text_original="Help",
+            text_cleaned="Help", created_at=datetime.now(UTC),
+        )
+        self.session.add(norm2)
+        self.session.flush()
+
+        enrollment_new = engine.enroll(norm2.id, seq.id, "test")
+        enrollment_new.next_step_at = datetime.now(UTC) - timedelta(minutes=1)
+        self.session.commit()
+
+        count = engine.execute_due_steps()
+        assert count == 0
+
 
 class TestCreateDefaultSequences:
     """Test create_default_sequences() produces 3 correct templates."""

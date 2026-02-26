@@ -198,7 +198,11 @@ class ProjectConfig(BaseModel):
     redis: RedisConfig = RedisConfig()
     stream: StreamConfig = StreamConfig()
     platforms: PlatformsConfig = PlatformsConfig()
-    rate_limits: dict[str, Any] = {"max_replies_per_hour": 5, "max_replies_per_day": 20}
+    rate_limits: dict[str, Any] = {
+        "max_replies_per_hour": 5,
+        "max_replies_per_day": 20,
+        "max_dms_per_day": 20,
+    }
     llm: LLMConfig = LLMConfig()
     twikit: TwikitConfig = TwikitConfig()
     experiments: ExperimentConfig = ExperimentConfig()

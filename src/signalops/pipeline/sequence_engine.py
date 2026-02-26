@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_MAX_LIKES_PER_HOUR = 15
 DEFAULT_MAX_FOLLOWS_PER_HOUR = 5
 DEFAULT_MAX_REPLIES_PER_DAY = 20
+DEFAULT_MAX_DMS_PER_DAY = 20
 JITTER_FACTOR = 0.3  # +/- 30% on delays
 
 
@@ -44,12 +45,14 @@ class SequenceEngine:
         max_likes_per_hour: int = DEFAULT_MAX_LIKES_PER_HOUR,
         max_follows_per_hour: int = DEFAULT_MAX_FOLLOWS_PER_HOUR,
         max_replies_per_day: int = DEFAULT_MAX_REPLIES_PER_DAY,
+        max_dms_per_day: int = DEFAULT_MAX_DMS_PER_DAY,
     ) -> None:
         self.session = session
         self.connector = connector
         self.max_likes_per_hour = max_likes_per_hour
         self.max_follows_per_hour = max_follows_per_hour
         self.max_replies_per_day = max_replies_per_day
+        self.max_dms_per_day = max_dms_per_day
 
     def enroll(
         self,
@@ -162,6 +165,20 @@ class SequenceEngine:
                     self.max_replies_per_day,
                 )
                 return False
+        elif action_type == "dm":
+            one_day_ago = now - timedelta(days=1)
+            count = (
+                self.session.query(StepExecution)
+                .filter(
+                    StepExecution.action_type == "dm",
+                    StepExecution.status == "executed",
+                    StepExecution.executed_at >= one_day_ago,
+                )
+                .count()
+            )
+            if count >= self.max_dms_per_day:
+                logger.warning("Rate limit: %d/%d DMs in last day", count, self.max_dms_per_day)
+                return False
         return True
 
     def _get_current_step(self, enrollment: Enrollment) -> SequenceStep | None:
@@ -218,6 +235,18 @@ class SequenceEngine:
             # Placeholder: check if lead responded
             success = True
             result = {"checked": True}
+
+        elif step.action_type == "dm":
+            config = json.loads(step.config_json or "{}")  # type: ignore[arg-type]
+            dm_text = config.get("dm_text", "")
+            if not dm_text:
+                draft = self._get_approved_draft(enrollment)
+                if draft:
+                    dm_text = draft.text_final or draft.text_generated
+                else:
+                    dm_text = "Hey, I saw your tweet and wanted to connect!"
+            success = self.connector.send_dm(post.author_id, dm_text)
+            result = {"dm_sent": success, "user_id": post.author_id, "text": dm_text}
 
         # Record execution
         execution = StepExecution(
