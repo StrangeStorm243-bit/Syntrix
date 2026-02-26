@@ -8,18 +8,18 @@ import { COLORS } from "../lib/colors";
 import { Notification } from "../components/Notification";
 
 const NOTIFICATIONS = [
-  { text: "Reply sent to @techleadSara", icon: "\u2192", color: COLORS.cyan, delay: 15 },
-  { text: "DM delivered to @devops_mike", icon: "\u2709", color: COLORS.magenta, delay: 50 },
-  { text: "@ctojennifer viewed your profile", icon: "\uD83D\uDC41", color: COLORS.text, delay: 80 },
-  { text: "New follower: @ctojennifer", icon: "+", color: COLORS.green, delay: 105 },
-  { text: "Inbound DM: 'Hey, can we chat about Syntrix?'", icon: "\uD83D\uDCAC", color: COLORS.gold, delay: 130 },
-  { text: "Reply sent to @growthguru", icon: "\u2192", color: COLORS.cyan, delay: 155 },
-  { text: "DM delivered to @saas_founder", icon: "\u2709", color: COLORS.magenta, delay: 170 },
-  { text: "3 new followers this hour", icon: "\uD83D\uDCC8", color: COLORS.green, delay: 185 },
-  { text: "Inbound: 'Love what you're building!'", icon: "\uD83D\uDCAC", color: COLORS.gold, delay: 195 },
-  { text: "Demo request from @enterprise_cto", icon: "\uD83D\uDD25", color: COLORS.gold, delay: 210 },
-  { text: "Pipeline: 12 new high-score leads", icon: "\u26A1", color: COLORS.cyan, delay: 220 },
-  { text: "Revenue alert: $2,400 MRR milestone", icon: "\uD83D\uDCB0", color: COLORS.moneyGreen, delay: 240 },
+  { text: "Reply sent to @techleadSara", icon: "\u2192", color: COLORS.cyan, delay: 8 },
+  { text: "DM delivered to @devops_mike", icon: "\u2709", color: COLORS.magenta, delay: 25 },
+  { text: "@ctojennifer viewed your profile", icon: "\uD83D\uDC41", color: COLORS.text, delay: 40 },
+  { text: "New follower: @ctojennifer", icon: "+", color: COLORS.green, delay: 53 },
+  { text: "Inbound DM: 'Hey, can we chat about Syntrix?'", icon: "\uD83D\uDCAC", color: COLORS.gold, delay: 65 },
+  { text: "Reply sent to @growthguru", icon: "\u2192", color: COLORS.cyan, delay: 78 },
+  { text: "DM delivered to @saas_founder", icon: "\u2709", color: COLORS.magenta, delay: 85 },
+  { text: "3 new followers this hour", icon: "\uD83D\uDCC8", color: COLORS.green, delay: 93 },
+  { text: "Inbound: 'Love what you're building!'", icon: "\uD83D\uDCAC", color: COLORS.gold, delay: 98 },
+  { text: "Demo request from @enterprise_cto", icon: "\uD83D\uDD25", color: COLORS.gold, delay: 105 },
+  { text: "Pipeline: 12 new high-score leads", icon: "\u26A1", color: COLORS.cyan, delay: 110 },
+  { text: "Revenue alert: $2,400 MRR milestone", icon: "\uD83D\uDCB0", color: COLORS.moneyGreen, delay: 120 },
 ];
 
 export const TheResults: React.FC = () => {

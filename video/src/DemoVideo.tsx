@@ -9,13 +9,13 @@ import { GettingRich } from "./scenes/GettingRich";
 import { CTA } from "./scenes/CTA";
 
 const SCENE = {
-  problem:   { start: 0,    duration: 240 },
-  enter:     { start: 240,  duration: 180 },
-  pipeline:  { start: 420,  duration: 420 },
-  dashboard: { start: 840,  duration: 300 },
-  results:   { start: 1140, duration: 300 },
-  rich:      { start: 1440, duration: 300 },
-  cta:       { start: 1740, duration: 60 },
+  problem:   { start: 0,    duration: 120 },
+  enter:     { start: 120,  duration: 90 },
+  pipeline:  { start: 210,  duration: 210 },
+  dashboard: { start: 420,  duration: 150 },
+  results:   { start: 570,  duration: 150 },
+  rich:      { start: 720,  duration: 150 },
+  cta:       { start: 870,  duration: 30 },
 } as const;
 
 export const DemoVideo: React.FC = () => {

@@ -23,15 +23,15 @@ export const CTA: React.FC = () => {
   });
 
   // Three CTA lines fade in staggered
-  const line1Opacity = interpolate(frame, [15, 25], [0, 1], {
+  const line1Opacity = interpolate(frame, [8, 13], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const line2Opacity = interpolate(frame, [25, 35], [0, 1], {
+  const line2Opacity = interpolate(frame, [13, 18], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const line3Opacity = interpolate(frame, [35, 45], [0, 1], {
+  const line3Opacity = interpolate(frame, [18, 23], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });

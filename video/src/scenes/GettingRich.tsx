@@ -23,20 +23,20 @@ const formatRevenue = (n: number): string => {
 export const GettingRich: React.FC = () => {
   const frame = useCurrentFrame();
 
-  // White flash for first 10 frames
-  const flashOpacity = interpolate(frame, [0, 10], [1, 0], {
+  // White flash for first 5 frames
+  const flashOpacity = interpolate(frame, [0, 5], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   // Gold radial glow builds
-  const goldIntensity = interpolate(frame, [0, 250], [0.05, 0.3], {
+  const goldIntensity = interpolate(frame, [0, 125], [0.05, 0.3], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Screen shake increases over frames 100-280
-  const shakeAmplitude = interpolate(frame, [100, 280], [0, 6], {
+  // Screen shake increases over frames 50-140
+  const shakeAmplitude = interpolate(frame, [50, 140], [0, 6], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -44,7 +44,7 @@ export const GettingRich: React.FC = () => {
   const shakeY = Math.cos(frame * 2.3) * shakeAmplitude;
 
   // Revenue counter: exponential easing ($0 -> $1M)
-  const counterProgress = interpolate(frame, [10, 260], [0, 1], {
+  const counterProgress = interpolate(frame, [15, 130], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -104,37 +104,37 @@ export const GettingRich: React.FC = () => {
         </div>
 
         {/* Hockey stick chart */}
-        <HockeyStick startFrame={20} duration={240} />
+        <HockeyStick startFrame={10} duration={120} />
 
         {/* Money rain */}
-        <MoneyRain count={70} startFrame={15} />
+        <MoneyRain count={70} startFrame={8} />
       </AbsoluteFill>
 
       {/* Particle bursts at increasing intensity */}
       <ParticleBurst
-        triggerFrame={120}
+        triggerFrame={60}
         count={30}
         color={COLORS.goldBright}
         radius={400}
-        duration={35}
+        duration={23}
         cx={960}
         cy={540}
       />
       <ParticleBurst
-        triggerFrame={200}
+        triggerFrame={100}
         count={45}
         color={COLORS.moneyGreen}
         radius={500}
-        duration={35}
+        duration={25}
         cx={960}
         cy={540}
       />
       <ParticleBurst
-        triggerFrame={260}
+        triggerFrame={130}
         count={60}
         color={COLORS.goldBright}
         radius={600}
-        duration={35}
+        duration={20}
         cx={960}
         cy={540}
       />

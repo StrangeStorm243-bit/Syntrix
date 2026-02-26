@@ -147,7 +147,7 @@ export const TheDashboard: React.FC = () => {
             {METRICS.map((metric, i) => {
               const cardOpacity = interpolate(
                 frame,
-                [20 + i * 15, 35 + i * 15],
+                [10 + i * 8, 18 + i * 8],
                 [0, 1],
                 {
                   extrapolateLeft: "clamp",
@@ -156,7 +156,7 @@ export const TheDashboard: React.FC = () => {
               );
               const cardY = interpolate(
                 frame,
-                [20 + i * 15, 35 + i * 15],
+                [10 + i * 8, 18 + i * 8],
                 [20, 0],
                 {
                   extrapolateLeft: "clamp",
@@ -192,8 +192,8 @@ export const TheDashboard: React.FC = () => {
                   </div>
                   <Counter
                     to={metric.value}
-                    startAt={25 + i * 15}
-                    duration={50}
+                    startAt={13 + i * 8}
+                    duration={30}
                     fontSize={36}
                     color={COLORS.text}
                     formatFn={(n: number) => Math.round(n).toLocaleString()}
@@ -247,10 +247,10 @@ export const TheDashboard: React.FC = () => {
 
             {/* Table rows */}
             {QUEUE_ROWS.map((row, i) => {
-              const rowAppearFrame = 100 + i * 35;
+              const rowAppearFrame = 50 + i * 18;
               const rowOpacity = interpolate(
                 frame,
-                [rowAppearFrame, rowAppearFrame + 15],
+                [rowAppearFrame, rowAppearFrame + 8],
                 [0, 1],
                 {
                   extrapolateLeft: "clamp",
@@ -258,8 +258,8 @@ export const TheDashboard: React.FC = () => {
                 },
               );
 
-              // Status badge flips to approved 50 frames after row appears
-              const approveFrame = rowAppearFrame + 50;
+              // Status badge flips to approved 25 frames after row appears
+              const approveFrame = rowAppearFrame + 25;
               const isApproved = frame >= approveFrame;
               const badgeColor = isApproved ? COLORS.green : COLORS.gold;
               const badgeText = isApproved ? "\u2713 Approved" : "Pending";

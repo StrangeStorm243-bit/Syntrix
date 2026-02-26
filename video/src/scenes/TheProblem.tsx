@@ -9,7 +9,7 @@ const TWEETS = [
     handle: "@frustrated_dev",
     text: "Code review is killing our velocity. Every PR takes 3 days.",
     from: "left" as const,
-    delay: 10,
+    delay: 5,
     x: -320,
     y: -180,
   },
@@ -17,7 +17,7 @@ const TWEETS = [
     handle: "@startup_sarah",
     text: "Bugs keep slipping through PRs... we need better tooling.",
     from: "right" as const,
-    delay: 30,
+    delay: 15,
     x: 280,
     y: -80,
   },
@@ -25,7 +25,7 @@ const TWEETS = [
     handle: "@ctojennifer",
     text: "Who even reads our tweets? Feels like shouting into the void.",
     from: "top" as const,
-    delay: 55,
+    delay: 28,
     x: -100,
     y: 40,
   },
@@ -33,7 +33,7 @@ const TWEETS = [
     handle: "@devops_mike",
     text: "We're losing deals because we can't find leads fast enough.",
     from: "left" as const,
-    delay: 75,
+    delay: 38,
     x: 250,
     y: 160,
   },
@@ -41,7 +41,7 @@ const TWEETS = [
     handle: "@indie_maker",
     text: "Spent 4 hours manually searching Twitter for potential users. Got 2 leads.",
     from: "right" as const,
-    delay: 95,
+    delay: 48,
     x: -280,
     y: 250,
   },
@@ -50,14 +50,14 @@ const TWEETS = [
 export const TheProblem: React.FC = () => {
   const frame = useCurrentFrame();
 
-  // Red ambient glow builds over first 180 frames
-  const glowIntensity = interpolate(frame, [0, 180], [0, 0.3], {
+  // Red ambient glow builds over first 90 frames
+  const glowIntensity = interpolate(frame, [0, 90], [0, 0.3], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Headline fade in at frame 160-200
-  const headlineOpacity = interpolate(frame, [160, 200], [0, 1], {
+  // Headline fade in at frame 80-100
+  const headlineOpacity = interpolate(frame, [80, 100], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -102,7 +102,9 @@ export const TheProblem: React.FC = () => {
           color: COLORS.text,
         }}
       >
-        Your customers are crying for help on{" "}
+        Your{" "}
+        <span style={{ fontWeight: 900, color: COLORS.cyan }}>future</span>{" "}
+        customers are crying for help on{" "}
         <span style={{ color: COLORS.twitterBlue }}>X</span>.
       </div>
 

@@ -15,28 +15,28 @@ export const EnterSyntrix: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Aurora gradient wipe — radial gradient appears over first 15 frames
-  const auroraOpacity = interpolate(frame, [0, 15], [0, 1], {
+  // Aurora gradient wipe — radial gradient appears over first 8 frames
+  const auroraOpacity = interpolate(frame, [0, 8], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Logo spring-slam: scale 3 -> 1 starting at frame 15
+  // Logo spring-slam: scale 3 -> 1 starting at frame 8
   const logoScale = spring({
-    frame: frame - 15,
+    frame: frame - 8,
     fps,
     config: SPRING_SLAM,
     from: 3,
     to: 1,
   });
 
-  const logoOpacity = interpolate(frame, [15, 25], [0, 1], {
+  const logoOpacity = interpolate(frame, [8, 13], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Subtext fade in at frame 100-120
-  const subtextOpacity = interpolate(frame, [100, 120], [0, 1], {
+  // Subtext fade in at frame 50-60
+  const subtextOpacity = interpolate(frame, [50, 60], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -78,9 +78,9 @@ export const EnterSyntrix: React.FC = () => {
         </span>
       </div>
 
-      {/* Particle burst at frame 20 */}
+      {/* Particle burst at frame 10 */}
       <ParticleBurst
-        triggerFrame={20}
+        triggerFrame={10}
         count={50}
         color={COLORS.cyan}
         radius={500}
@@ -103,7 +103,7 @@ export const EnterSyntrix: React.FC = () => {
         <Typewriter
           text="Find.  Engage.  Convert."
           speed={3}
-          delay={40}
+          delay={20}
           fontSize={40}
           color={COLORS.text}
           fontFamily="monospace"

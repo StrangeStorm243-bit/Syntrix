@@ -32,8 +32,8 @@ export const ThePipeline: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // Callout appears after stage 5 (Approve) activates: stage 5 activateAt = 5 * 45 + 20 = 245
-  const calloutOpacity = interpolate(frame, [260, 290], [0, 1], {
+  // Callout appears after stage 5 (Approve) activates: stage 5 activateAt = 5 * 23 + 10 = 125
+  const calloutOpacity = interpolate(frame, [130, 145], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -96,12 +96,12 @@ export const ThePipeline: React.FC = () => {
           const fromX = STAGE_START_X + i * STAGE_SPACING + 32;
           const toX = STAGE_START_X + (i + 1) * STAGE_SPACING + 32;
           const lineY = STAGE_Y + 32;
-          const activateAt = i * 45 + 20;
+          const activateAt = i * 23 + 10;
 
           // Animate line x2 from fromX to toX
           const lineProgress = interpolate(
             frame,
-            [activateAt + 20, activateAt + 55],
+            [activateAt + 10, activateAt + 28],
             [0, 1],
             {
               extrapolateLeft: "clamp",
@@ -133,7 +133,7 @@ export const ThePipeline: React.FC = () => {
           label={stage.label}
           icon={stage.icon}
           color={stage.color}
-          activateAt={i * 45 + 20}
+          activateAt={i * 23 + 10}
           x={STAGE_START_X + i * STAGE_SPACING}
           y={STAGE_Y}
         />
