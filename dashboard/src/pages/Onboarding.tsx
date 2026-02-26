@@ -58,20 +58,30 @@ const SEQUENCE_TEMPLATES = [
   {
     id: 'engage-then-pitch',
     name: 'Engage Then Pitch',
-    description: 'Like their tweet, reply with value, then follow up with your solution after engagement.',
-    steps: ['Like Tweet', 'Value Reply', 'Follow Up', 'Soft Pitch'],
+    description:
+      'Like their tweet, reply with value, then follow up with a DM after engagement.',
+    steps: ['Like Tweet', 'Value Reply', 'Follow', 'DM Follow-Up'],
   },
   {
     id: 'direct-value',
     name: 'Direct Value',
-    description: 'Lead with a helpful reply that naturally mentions your product as a solution.',
-    steps: ['Value Reply', 'Check Engagement', 'Share Resource'],
+    description:
+      'Lead with a helpful reply that naturally mentions your product, then DM after engagement.',
+    steps: ['Value Reply', 'Check Engagement', 'DM Resource'],
   },
   {
     id: 'relationship-first',
     name: 'Relationship First',
-    description: 'Build genuine rapport over multiple interactions before any mention of your product.',
-    steps: ['Like Tweet', 'Thoughtful Reply', 'Follow', 'Engage Again', 'Soft Pitch'],
+    description:
+      'Build genuine rapport over multiple interactions before any mention of your product.',
+    steps: ['Like Tweet', 'Thoughtful Reply', 'Follow', 'Engage Again', 'DM Soft Pitch'],
+  },
+  {
+    id: 'cold-dm',
+    name: 'Cold DM',
+    description:
+      'Send a direct message immediately after finding a relevant lead. Lands in message requests for non-followers.',
+    steps: ['DM Outreach'],
   },
 ];
 
