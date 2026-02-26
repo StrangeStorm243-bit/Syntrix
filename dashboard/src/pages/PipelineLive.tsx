@@ -19,6 +19,7 @@ import {
   Heart,
   UserPlus,
   Clock,
+  MessageCircle,
 } from 'lucide-react';
 import type { PipelineFlowData } from '../pipeline/types';
 
@@ -70,6 +71,12 @@ const PIPELINE_STEPS = [
     description: 'Approved replies are posted via your connected Twitter account',
     color: '#06b6d4',
   },
+  {
+    icon: MessageCircle,
+    title: 'DM',
+    description: 'Send direct messages as part of configurable outreach sequences',
+    color: '#a855f7',
+  },
 ];
 
 const SEQUENCE_STEPS = [
@@ -77,6 +84,7 @@ const SEQUENCE_STEPS = [
   { icon: UserPlus, label: 'Follow the user', delay: '+6 hours' },
   { icon: Clock, label: 'Wait for natural timing', delay: '+24 hours' },
   { icon: MessageSquare, label: 'Reply with AI draft', delay: 'After approval' },
+  { icon: MessageCircle, label: 'Send DM', delay: '+2 days' },
   { icon: Target, label: 'Track response', delay: '+3 days' },
 ];
 
@@ -116,12 +124,12 @@ export default function PipelineLive() {
           How It Works
         </h1>
         <p className="mt-1 text-sm text-cyber-text-dim">
-          Syntrix finds leads on Twitter, scores them with AI, and helps you reach out — all on autopilot.
+          Syntrix finds leads on Twitter, scores them with AI, drafts replies, and sends DMs — all from a self-hosted dashboard.
         </p>
       </div>
 
       {/* Pipeline Steps — visual explainer */}
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-7 gap-2">
         {PIPELINE_STEPS.map((step, i) => (
           <div
             key={step.title}
@@ -282,7 +290,7 @@ export default function PipelineLive() {
           Automated Outreach Sequences
         </h2>
         <p className="text-xs text-cyber-text-dim mb-4">
-          Once the pipeline scores a lead, sequences handle the outreach automatically — like, follow, wait, then reply.
+          Once the pipeline scores a lead, sequences handle the outreach automatically — like, follow, wait, reply, then DM.
         </p>
         <div className="flex items-center gap-1">
           {SEQUENCE_STEPS.map((step, i) => (

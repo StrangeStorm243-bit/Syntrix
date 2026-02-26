@@ -11,8 +11,8 @@ import {
   Heart,
   MessageSquare,
   UserPlus,
-  Send,
   Eye,
+  MessageCircle,
 } from 'lucide-react';
 import { GlassCard } from '../components/cyber/GlassCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -25,7 +25,7 @@ const ACTION_ICONS: Record<string, typeof Heart> = {
   like: Heart,
   reply: MessageSquare,
   follow: UserPlus,
-  dm: Send,
+  dm: MessageCircle,
   view_profile: Eye,
 };
 

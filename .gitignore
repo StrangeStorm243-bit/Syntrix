@@ -41,3 +41,4 @@ worktrees/
 .signalops/
 .worktrees/
 .mcp.json
+.vercel

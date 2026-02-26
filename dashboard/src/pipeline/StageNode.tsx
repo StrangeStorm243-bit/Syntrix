@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { BarChart3, Brain, Download, FileText, Send } from 'lucide-react';
+import { BarChart3, Brain, Download, FileText, MessageCircle, Send } from 'lucide-react';
 import type { PipelineStage } from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -10,6 +10,7 @@ const STAGE_ICONS: Record<string, any> = {
   score: BarChart3,
   draft: FileText,
   send: Send,
+  dm: MessageCircle,
 };
 
 function AnimatedCounter({ target }: { target: number }) {

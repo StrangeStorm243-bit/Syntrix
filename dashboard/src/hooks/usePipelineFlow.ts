@@ -14,6 +14,7 @@ const STAGE_DEFS: Omit<PipelineStage, 'count' | 'active'>[] = [
   { id: 'score', label: 'Score', color: '#ffd700' },
   { id: 'draft', label: 'Draft', color: '#ff1493' },
   { id: 'send', label: 'Send', color: '#ff6b35' },
+  { id: 'dm', label: 'DM', color: '#a855f7' },
 ];
 
 const STATS_KEY_MAP: Record<string, string> = {
@@ -22,6 +23,7 @@ const STATS_KEY_MAP: Record<string, string> = {
   score: 'scored',
   draft: 'drafted',
   send: 'sent',
+  dm: 'dms_sent',
 };
 
 const MAX_EVENTS = 50;

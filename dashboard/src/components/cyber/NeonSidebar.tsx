@@ -44,6 +44,16 @@ export function NeonSidebar() {
         >
           Syntrix
         </span>
+        <span
+          className="ml-2 rounded-full px-2 py-0.5 text-[10px] font-mono font-medium"
+          style={{
+            background: 'rgba(255,20,147,0.12)',
+            border: '1px solid rgba(255,20,147,0.25)',
+            color: 'var(--cyber-pink)',
+          }}
+        >
+          v0.3
+        </span>
       </div>
 
       {/* Navigation */}
