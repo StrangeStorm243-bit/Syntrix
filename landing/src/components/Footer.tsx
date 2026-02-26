@@ -14,7 +14,7 @@ export function Footer() {
           <span className="font-heading text-sm font-semibold tracking-widest text-slate-500">
             SYNTRIX
           </span>
-          <span className="text-xs text-slate-600">MIT License</span>
+          <span className="text-xs text-slate-600">AGPL-3.0 License</span>
         </div>
 
         {/* Links */}

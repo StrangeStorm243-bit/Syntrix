@@ -2,7 +2,7 @@ import { Shield, Container, Code2 } from "lucide-react";
 
 const BADGES = [
   { icon: Code2, label: "Python 3.11+" },
-  { icon: Shield, label: "MIT Licensed" },
+  { icon: Shield, label: "AGPL-3.0 Licensed" },
   { icon: Container, label: "Docker Ready" },
 ];
 
