@@ -52,8 +52,8 @@ def _run_pipeline_sync(project_id: str, db_url: str) -> None:
 
         # Create LLM judge and drafter
         gateway = LLMGateway()
-        judge_model = getattr(config.llm, "judge_model", "claude-sonnet-4-6")
-        draft_model = getattr(config.llm, "draft_model", "claude-sonnet-4-6")
+        judge_model = config.llm.judge_model
+        draft_model = config.llm.draft_model
         judge = LLMPromptJudge(gateway=gateway, model=judge_model)
         drafter = LLMDraftGenerator(gateway=gateway, model=draft_model)
 
