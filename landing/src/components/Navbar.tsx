@@ -22,7 +22,7 @@ export function Navbar() {
   }, []);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText("pip install signalops");
+    await navigator.clipboard.writeText("docker compose up");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -64,7 +64,7 @@ export function Navbar() {
             onClick={handleCopy}
             className="flex items-center gap-2 rounded-lg border border-cta-green/30 bg-cta-green/5 px-3 py-1.5 font-mono text-xs text-cta-green transition-colors duration-200 hover:bg-cta-green/10 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
           >
-            <span>pip install signalops</span>
+            <span>docker compose up</span>
             {copied ? (
               <Check className="h-3.5 w-3.5" />
             ) : (
@@ -104,7 +104,7 @@ export function Navbar() {
               onClick={handleCopy}
               className="flex items-center gap-2 rounded-lg border border-cta-green/30 bg-cta-green/5 px-3 py-1.5 font-mono text-xs text-cta-green cursor-pointer w-fit focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
             >
-              <span>pip install signalops</span>
+              <span>docker compose up</span>
               {copied ? (
                 <Check className="h-3.5 w-3.5" />
               ) : (
