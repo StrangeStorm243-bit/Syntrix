@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">SignalOps</h1>
+  <h1 align="center">Syntrix</h1>
   <p align="center">
     <strong>Agentic social lead finder + outreach workbench</strong>
   </p>
@@ -40,6 +40,7 @@ Every reply requires human approval. No auto-send, no multi-account, no browser 
 - **AI draft generation** — context-aware replies using project persona, tone, and voice notes with automatic character limit enforcement
 - **Human-in-the-loop approval** — approve, edit, or reject every draft before sending
 - **Rate-limited sending** — configurable hourly/daily/monthly caps with jitter
+- **DM outreach sequences** — configurable multi-step sequences including direct messages, with rate limiting and human approval
 
 ### Intelligence & Learning
 - **Outcome tracking** — monitors if replies get liked, replied to, or followed
