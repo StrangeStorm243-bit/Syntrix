@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -158,7 +158,7 @@ class TestTwikitConnector:
 
     def test_tweet_to_raw_post_with_datetime_object(self) -> None:
         """_tweet_to_raw_post handles datetime objects."""
-        connector = TwikitConnector(username="test", password="pass")
+        TwikitConnector(username="test", password="pass")
         mock_tweet = MagicMock()
         mock_tweet.id = "111"
         mock_tweet.user.id = "u1"
@@ -167,7 +167,7 @@ class TestTwikitConnector:
         mock_tweet.user.followers_count = 100
         mock_tweet.user.verified = False
         mock_tweet.text = "Hello world"
-        mock_tweet.created_at = datetime(2026, 2, 25, tzinfo=timezone.utc)
+        mock_tweet.created_at = datetime(2026, 2, 25, tzinfo=UTC)
         mock_tweet.lang = "en"
         mock_tweet.reply_to = None
         mock_tweet.conversation_id = None
@@ -195,15 +195,13 @@ class TestTwikitConnector:
             mock_instance.load_cookies.return_value = None  # Success
             sys.modules["twikit"].Client = mock_client_cls
 
-            client = connector._ensure_client()
+            connector._ensure_client()
             assert connector._logged_in is True
             mock_instance.load_cookies.assert_called_once()
 
     def test_ensure_client_login_on_cookie_fail(self) -> None:
         """_ensure_client falls back to login when cookies fail."""
-        connector = TwikitConnector(
-            username="test", password="pass", email="test@example.com"
-        )
+        connector = TwikitConnector(username="test", password="pass", email="test@example.com")
         with patch.dict("sys.modules", {"twikit": MagicMock()}):
             import sys
 
@@ -214,7 +212,7 @@ class TestTwikitConnector:
             mock_instance.login = AsyncMock(return_value=None)
             sys.modules["twikit"].Client = mock_client_cls
 
-            client = connector._ensure_client()
+            connector._ensure_client()
             assert connector._logged_in is True
             mock_instance.login.assert_called_once_with(
                 auth_info_1="test",
@@ -239,9 +237,7 @@ class TestTwikitFactory:
         connector = ConnectorFactory.create(Platform.X)
         assert isinstance(connector, TwikitConnector)
 
-    def test_factory_falls_back_to_x_api(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_factory_falls_back_to_x_api(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Factory returns XConnector when twikit credentials not set."""
         monkeypatch.delenv("TWIKIT_USERNAME", raising=False)
         monkeypatch.delenv("TWIKIT_PASSWORD", raising=False)
@@ -251,9 +247,7 @@ class TestTwikitFactory:
 
         assert isinstance(connector, XConnector)
 
-    def test_factory_twikit_with_optional_email(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_factory_twikit_with_optional_email(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Factory passes email and cookie_path from env."""
         monkeypatch.setenv("TWIKIT_USERNAME", "myuser")
         monkeypatch.setenv("TWIKIT_PASSWORD", "mypass")

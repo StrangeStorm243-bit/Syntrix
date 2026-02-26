@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Start APScheduler for periodic pipeline runs (optional)
     scheduler: Any = None
     try:
-        from apscheduler.schedulers.asyncio import AsyncIOScheduler  # type: ignore[import-untyped]
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
         scheduler = AsyncIOScheduler()
         scheduler.add_job(

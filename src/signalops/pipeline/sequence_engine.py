@@ -1,10 +1,11 @@
 """Sequence engine — state machine for multi-step outreach."""
+
 from __future__ import annotations
 
 import json
 import logging
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -63,23 +64,21 @@ class SequenceEngine:
             project_id=project_id,
             current_step_order=0,
             status=EnrollmentStatus.ACTIVE,
-            next_step_at=datetime.now(timezone.utc),
+            next_step_at=datetime.now(UTC),
         )
         self.session.add(enrollment)
         self.session.commit()
-        logger.info(
-            "Enrolled post %d in sequence %d", normalized_post_id, sequence_id
-        )
+        logger.info("Enrolled post %d in sequence %d", normalized_post_id, sequence_id)
         return enrollment
 
     def execute_due_steps(self) -> int:
         """Execute all steps that are due. Returns count of executed steps."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         due = (
             self.session.query(Enrollment)
             .filter(
                 Enrollment.status == EnrollmentStatus.ACTIVE,
-                Enrollment.next_step_at <= now,  # type: ignore[operator]
+                Enrollment.next_step_at <= now,
             )
             .all()
         )
@@ -91,9 +90,7 @@ class SequenceEngine:
                 self._complete_enrollment(enrollment)
                 continue
 
-            if step.requires_approval and not self._has_approved_draft(
-                enrollment
-            ):
+            if step.requires_approval and not self._has_approved_draft(enrollment):
                 continue  # Wait for human approval
 
             success = self._execute_step(enrollment, step)
@@ -104,27 +101,20 @@ class SequenceEngine:
         self.session.commit()
         return executed_count
 
-    def _get_current_step(
-        self, enrollment: Enrollment
-    ) -> SequenceStep | None:
+    def _get_current_step(self, enrollment: Enrollment) -> SequenceStep | None:
         """Get the next step to execute for this enrollment."""
         return (
             self.session.query(SequenceStep)
             .filter(
                 SequenceStep.sequence_id == enrollment.sequence_id,
-                SequenceStep.step_order
-                == enrollment.current_step_order + 1,  # type: ignore[operator]
+                SequenceStep.step_order == enrollment.current_step_order + 1,
             )
             .first()
         )
 
-    def _execute_step(
-        self, enrollment: Enrollment, step: SequenceStep
-    ) -> bool:
+    def _execute_step(self, enrollment: Enrollment, step: SequenceStep) -> bool:
         """Execute a single step. Returns True if successful."""
-        post = self.session.get(
-            NormalizedPost, enrollment.normalized_post_id
-        )
+        post = self.session.get(NormalizedPost, enrollment.normalized_post_id)
         if post is None:
             logger.warning(
                 "Post %d not found for enrollment %d",
@@ -154,8 +144,8 @@ class SequenceEngine:
             result = {"reply_id": reply_id, "text": text}
             if success:
                 draft.status = DraftStatus.SENT  # type: ignore[assignment]
-                draft.sent_at = datetime.now(timezone.utc)  # type: ignore[assignment]
-                draft.sent_post_id = reply_id  # type: ignore[assignment]
+                draft.sent_at = datetime.now(UTC)  # type: ignore[assignment]
+                draft.sent_post_id = reply_id
 
         elif step.action_type == "wait":
             success = True
@@ -172,23 +162,20 @@ class SequenceEngine:
             step_id=step.id,
             action_type=step.action_type,
             status="executed" if success else "failed",
-            executed_at=datetime.now(timezone.utc),
+            executed_at=datetime.now(UTC),
             result_json=json.dumps(result),
         )
         self.session.add(execution)
         return success
 
-    def _advance(
-        self, enrollment: Enrollment, completed_step: SequenceStep
-    ) -> None:
+    def _advance(self, enrollment: Enrollment, completed_step: SequenceStep) -> None:
         """Advance enrollment to the next step."""
-        enrollment.current_step_order = completed_step.step_order  # type: ignore[assignment]
+        enrollment.current_step_order = completed_step.step_order
         next_step = (
             self.session.query(SequenceStep)
             .filter(
                 SequenceStep.sequence_id == enrollment.sequence_id,
-                SequenceStep.step_order
-                == completed_step.step_order + 1,  # type: ignore[operator]
+                SequenceStep.step_order == completed_step.step_order + 1,
             )
             .first()
         )
@@ -196,16 +183,14 @@ class SequenceEngine:
         if next_step is None:
             self._complete_enrollment(enrollment)
         else:
-            delay = float(next_step.delay_hours)  # type: ignore[arg-type]
+            delay = float(next_step.delay_hours)
             jitter = delay * JITTER_FACTOR * (2 * random.random() - 1)
-            enrollment.next_step_at = datetime.now(  # type: ignore[assignment]
-                timezone.utc
-            ) + timedelta(hours=delay + jitter)
+            enrollment.next_step_at = datetime.now(UTC) + timedelta(hours=delay + jitter)  # type: ignore[assignment]
 
     def _complete_enrollment(self, enrollment: Enrollment) -> None:
         """Mark enrollment as completed."""
         enrollment.status = EnrollmentStatus.COMPLETED  # type: ignore[assignment]
-        enrollment.completed_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.completed_at = datetime.now(UTC)  # type: ignore[assignment]
         enrollment.next_step_at = None  # type: ignore[assignment]
 
     def _has_approved_draft(self, enrollment: Enrollment) -> bool:
@@ -218,16 +203,12 @@ class SequenceEngine:
             self.session.query(Draft)
             .filter(
                 Draft.normalized_post_id == enrollment.normalized_post_id,
-                Draft.status.in_(  # type: ignore[union-attr]
-                    [DraftStatus.APPROVED, DraftStatus.EDITED]
-                ),
+                Draft.status.in_([DraftStatus.APPROVED, DraftStatus.EDITED]),
             )
             .first()
         )
 
-    def create_default_sequences(
-        self, project_id: str
-    ) -> list[Sequence]:
+    def create_default_sequences(self, project_id: str) -> list[Sequence]:
         """Create the three default sequence templates for a project."""
         sequences: list[Sequence] = []
 

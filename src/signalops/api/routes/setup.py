@@ -1,4 +1,5 @@
 """Onboarding setup endpoints."""
+
 from __future__ import annotations
 
 import logging
@@ -84,7 +85,7 @@ def _get_twikit_connector_class() -> Any:
     """Lazily import TwikitConnector."""
     global TwikitConnector  # noqa: PLW0603
     if TwikitConnector is None:
-        from signalops.connectors.twikit_connector import (  # type: ignore[import-not-found]
+        from signalops.connectors.twikit_connector import (
             TwikitConnector as _Cls,
         )
 
@@ -143,9 +144,7 @@ def complete_setup(
     db: Session = Depends(get_db),
 ) -> SetupStatus:
     """Complete onboarding — creates project config + DB record + default sequences."""
-    project_id = (
-        req.project_name.lower().replace(" ", "-").replace("_", "-")
-    )
+    project_id = req.project_name.lower().replace(" ", "-").replace("_", "-")
 
     # Generate search queries from topics
     queries: list[dict[str, Any]] = []
@@ -180,9 +179,7 @@ def complete_setup(
                 "Evaluate if this tweet indicates someone who might benefit "
                 "from this product."
             ),
-            "positive_signals": [
-                f"Expressing frustration related to: {req.problem_statement}"
-            ],
+            "positive_signals": [f"Expressing frustration related to: {req.problem_statement}"],
             "negative_signals": ["Recruiting posts", "Bot-like behavior"],
         },
         "persona": {
@@ -198,15 +195,9 @@ def complete_setup(
         },
         "llm": {
             "judge_model": (
-                "ollama/llama3.2:3b"
-                if req.llm_provider == "ollama"
-                else "gpt-4o-mini"
+                "ollama/llama3.2:3b" if req.llm_provider == "ollama" else "gpt-4o-mini"
             ),
-            "draft_model": (
-                "ollama/mistral:7b"
-                if req.llm_provider == "ollama"
-                else "gpt-4o-mini"
-            ),
+            "draft_model": ("ollama/mistral:7b" if req.llm_provider == "ollama" else "gpt-4o-mini"),
             "temperature": 0.3,
             "max_tokens": 1024,
         },

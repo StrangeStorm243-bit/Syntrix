@@ -133,15 +133,13 @@ class LinkedInConnector(Connector):
     def like(self, post_id: str) -> bool:
         """Like a LinkedIn post. Not implemented."""
         raise NotImplementedError(
-            "LinkedIn like is not implemented. "
-            "LinkedIn connector is read-only intelligence only."
+            "LinkedIn like is not implemented. LinkedIn connector is read-only intelligence only."
         )
 
     def follow(self, user_id: str) -> bool:
         """Follow a LinkedIn user. Not implemented."""
         raise NotImplementedError(
-            "LinkedIn follow is not implemented. "
-            "LinkedIn connector is read-only intelligence only."
+            "LinkedIn follow is not implemented. LinkedIn connector is read-only intelligence only."
         )
 
     def health_check(self) -> bool:

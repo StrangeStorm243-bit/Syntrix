@@ -1,8 +1,9 @@
 """Tests for setup and sequence API routes."""
+
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +14,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from signalops.storage.database import (
-    Base,
     Enrollment,
     EnrollmentStatus,
     NormalizedPost,
@@ -139,9 +139,7 @@ class TestCompleteSetup:
                 pass
 
     @patch("signalops.api.routes.setup.SequenceEngine")
-    def test_complete_setup_creates_project(
-        self, mock_engine_cls: MagicMock
-    ) -> None:
+    def test_complete_setup_creates_project(self, mock_engine_cls: MagicMock) -> None:
         """POST /api/setup creates a project in the database."""
         mock_engine_instance = MagicMock()
         mock_engine_instance.create_default_sequences.return_value = []
@@ -169,9 +167,7 @@ class TestCompleteSetup:
         assert data["project_name"] == "Test Project"
 
     @patch("signalops.api.routes.setup.SequenceEngine")
-    def test_complete_setup_creates_yaml_file(
-        self, mock_engine_cls: MagicMock
-    ) -> None:
+    def test_complete_setup_creates_yaml_file(self, mock_engine_cls: MagicMock) -> None:
         """POST /api/setup generates a project YAML file."""
         mock_engine_instance = MagicMock()
         mock_engine_instance.create_default_sequences.return_value = []
@@ -196,9 +192,7 @@ class TestCompleteSetup:
         assert os.path.exists(config_path)
 
     @patch("signalops.api.routes.setup.SequenceEngine")
-    def test_setup_status_complete_after_setup(
-        self, mock_engine_cls: MagicMock
-    ) -> None:
+    def test_setup_status_complete_after_setup(self, mock_engine_cls: MagicMock) -> None:
         """After POST /api/setup, GET /api/setup/status returns is_complete=True."""
         mock_engine_instance = MagicMock()
         mock_engine_instance.create_default_sequences.return_value = []
@@ -269,9 +263,7 @@ class TestListSequences:
         """Sequences include enrollment counts."""
         session = Session(self.engine)
         # Add a raw + normalized post for enrollment FK
-        raw = RawPost(
-            project_id="test", platform="x", platform_id="tw1", raw_json={}
-        )
+        raw = RawPost(project_id="test", platform="x", platform_id="tw1", raw_json={})
         session.add(raw)
         session.flush()
         norm = NormalizedPost(
@@ -283,7 +275,7 @@ class TestListSequences:
             author_username="testuser",
             text_original="Test",
             text_cleaned="Test",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(norm)
         session.flush()
@@ -320,9 +312,7 @@ class TestListEnrollments:
         session.flush()
         self.seq_id = seq.id
 
-        raw = RawPost(
-            project_id="test", platform="x", platform_id="tw1", raw_json={}
-        )
+        raw = RawPost(project_id="test", platform="x", platform_id="tw1", raw_json={})
         session.add(raw)
         session.flush()
         norm = NormalizedPost(
@@ -334,7 +324,7 @@ class TestListEnrollments:
             author_username="testuser",
             text_original="Test",
             text_cleaned="Test",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         session.add(norm)
         session.flush()

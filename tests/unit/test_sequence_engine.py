@@ -1,7 +1,8 @@
 """Tests for the sequence engine state machine."""
+
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 from sqlalchemy import create_engine
@@ -9,10 +10,8 @@ from sqlalchemy.orm import Session
 
 from signalops.pipeline.sequence_engine import SequenceEngine
 from signalops.storage.database import (
-    Base,
     Draft,
     DraftStatus,
-    Enrollment,
     EnrollmentStatus,
     NormalizedPost,
     Project,
@@ -46,9 +45,7 @@ class TestSequenceEngine:
         self.session.add(proj)
 
         # Seed a raw post + normalized post
-        raw = RawPost(
-            project_id="test", platform="x", platform_id="tw1", raw_json={}
-        )
+        raw = RawPost(project_id="test", platform="x", platform_id="tw1", raw_json={})
         self.session.add(raw)
         self.session.flush()
         norm = NormalizedPost(
@@ -60,7 +57,7 @@ class TestSequenceEngine:
             author_username="testuser",
             text_original="Need help",
             text_cleaned="Need help",
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         self.session.add(norm)
         self.session.flush()
@@ -113,12 +110,12 @@ class TestSequenceEngine:
     def test_enroll_sets_next_step_at(self) -> None:
         """enroll() sets next_step_at to approximately now."""
         engine = SequenceEngine(self.session, self.connector)
-        before = datetime.now(timezone.utc).replace(tzinfo=None)
+        before = datetime.now(UTC).replace(tzinfo=None)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
 
         assert enrollment.next_step_at is not None
         # SQLite stores naive datetimes, so compare without tzinfo
-        after = datetime.now(timezone.utc).replace(tzinfo=None)
+        after = datetime.now(UTC).replace(tzinfo=None)
         assert before <= enrollment.next_step_at <= after
 
     def test_execute_like_step(self) -> None:
@@ -126,7 +123,7 @@ class TestSequenceEngine:
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         # Make it due now
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         executed = engine.execute_due_steps()
@@ -137,7 +134,7 @@ class TestSequenceEngine:
         """After executing a like step, a StepExecution record exists."""
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         engine.execute_due_steps()
@@ -155,7 +152,7 @@ class TestSequenceEngine:
         """After like step, enrollment advances to step_order 1."""
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         engine.execute_due_steps()
@@ -169,7 +166,7 @@ class TestSequenceEngine:
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         # Simulate having completed step 1 (like), now on wait step
         enrollment.current_step_order = 1  # type: ignore[assignment]
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         engine.execute_due_steps()
@@ -187,7 +184,7 @@ class TestSequenceEngine:
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         # Jump to step 3 (reply)
         enrollment.current_step_order = 2  # type: ignore[assignment]
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         executed = engine.execute_due_steps()
@@ -200,7 +197,7 @@ class TestSequenceEngine:
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         # Jump to step 3 (reply)
         enrollment.current_step_order = 2  # type: ignore[assignment]
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
 
         # Create an approved draft for this post
         draft = Draft(
@@ -224,7 +221,7 @@ class TestSequenceEngine:
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         enrollment.current_step_order = 2  # type: ignore[assignment]
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
 
         draft = Draft(
             normalized_post_id=self.norm_id,
@@ -245,7 +242,7 @@ class TestSequenceEngine:
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         enrollment.current_step_order = 2  # type: ignore[assignment]
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
 
         # Add approved draft for reply step
         draft = Draft(
@@ -269,7 +266,7 @@ class TestSequenceEngine:
         """Enrollments with next_step_at in the future are not executed."""
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
-        enrollment.next_step_at = datetime.now(timezone.utc) + timedelta(hours=24)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC) + timedelta(hours=24)  # type: ignore[assignment]
         self.session.commit()
 
         executed = engine.execute_due_steps()
@@ -280,7 +277,7 @@ class TestSequenceEngine:
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
         enrollment.status = EnrollmentStatus.PAUSED  # type: ignore[assignment]
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         executed = engine.execute_due_steps()
@@ -303,9 +300,11 @@ class TestSequenceEngine:
 
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(
-            self.norm_id, seq.id, "test"  # type: ignore[arg-type]
+            self.norm_id,
+            seq.id,
+            "test",  # type: ignore[arg-type]
         )
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         engine.execute_due_steps()
@@ -317,7 +316,7 @@ class TestSequenceEngine:
 
         engine = SequenceEngine(self.session, self.connector)
         enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
-        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
         self.session.commit()
 
         executed = engine.execute_due_steps()

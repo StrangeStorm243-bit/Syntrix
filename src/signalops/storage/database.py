@@ -55,7 +55,7 @@ class OutcomeType(enum.Enum):
     NEGATIVE = "negative"
 
 
-class EnrollmentStatus(str, enum.Enum):
+class EnrollmentStatus(enum.StrEnum):
     """Status of a lead's enrollment in a sequence."""
 
     ACTIVE = "active"
@@ -412,15 +412,11 @@ class Enrollment(Base):
     __tablename__ = "enrollments"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    normalized_post_id = Column(
-        Integer, ForeignKey("normalized_posts.id"), nullable=False
-    )
+    normalized_post_id = Column(Integer, ForeignKey("normalized_posts.id"), nullable=False)
     sequence_id = Column(Integer, ForeignKey("sequences.id"), nullable=False)
     project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
     current_step_order = Column(Integer, default=0)
-    status: Column[Any] = Column(
-        SAEnum(EnrollmentStatus), default=EnrollmentStatus.ACTIVE
-    )
+    status: Column[Any] = Column(SAEnum(EnrollmentStatus), default=EnrollmentStatus.ACTIVE)
     enrolled_at = Column(DateTime, server_default=func.now())
     next_step_at = Column(DateTime)
     completed_at = Column(DateTime)

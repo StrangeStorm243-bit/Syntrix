@@ -1,4 +1,5 @@
 """Sequence management endpoints."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -72,9 +73,7 @@ def list_sequences(
 ) -> list[SequenceResponse]:
     """List all sequences for the active project."""
     project = _get_active_project(db)
-    sequences = (
-        db.query(Sequence).filter(Sequence.project_id == project.id).all()
-    )
+    sequences = db.query(Sequence).filter(Sequence.project_id == project.id).all()
     results: list[SequenceResponse] = []
     for seq in sequences:
         enrolled = (
@@ -95,16 +94,16 @@ def list_sequences(
         )
         results.append(
             SequenceResponse(
-                id=int(seq.id),  # type: ignore[arg-type]
+                id=int(seq.id),
                 name=str(seq.name),
                 description=seq.description,  # type: ignore[arg-type]
                 is_active=bool(seq.is_active),
                 steps=[
                     SequenceStepResponse(
-                        id=int(s.id),  # type: ignore[arg-type]
-                        step_order=int(s.step_order),  # type: ignore[arg-type]
+                        id=int(s.id),
+                        step_order=int(s.step_order),
                         action_type=str(s.action_type),
-                        delay_hours=float(s.delay_hours),  # type: ignore[arg-type]
+                        delay_hours=float(s.delay_hours),
                         requires_approval=bool(s.requires_approval),
                     )
                     for s in seq.steps
@@ -116,9 +115,7 @@ def list_sequences(
     return results
 
 
-@router.get(
-    "/{sequence_id}/enrollments", response_model=list[EnrollmentResponse]
-)
+@router.get("/{sequence_id}/enrollments", response_model=list[EnrollmentResponse])
 def list_enrollments(
     sequence_id: int,
     db: Session = Depends(get_db),
@@ -127,26 +124,18 @@ def list_enrollments(
     enrollments = (
         db.query(Enrollment)
         .filter(Enrollment.sequence_id == sequence_id)
-        .order_by(Enrollment.enrolled_at.desc())  # type: ignore[union-attr]
+        .order_by(Enrollment.enrolled_at.desc())
         .limit(100)
         .all()
     )
     return [
         EnrollmentResponse(
-            id=int(e.id),  # type: ignore[arg-type]
-            normalized_post_id=int(e.normalized_post_id),  # type: ignore[arg-type]
-            current_step_order=int(e.current_step_order),  # type: ignore[arg-type]
-            status=(
-                e.status.value
-                if hasattr(e.status, "value")
-                else str(e.status)
-            ),
-            enrolled_at=(
-                e.enrolled_at.isoformat() if e.enrolled_at else ""
-            ),
-            next_step_at=(
-                e.next_step_at.isoformat() if e.next_step_at else None
-            ),
+            id=int(e.id),
+            normalized_post_id=int(e.normalized_post_id),
+            current_step_order=int(e.current_step_order),
+            status=(e.status.value if hasattr(e.status, "value") else str(e.status)),
+            enrolled_at=(e.enrolled_at.isoformat() if e.enrolled_at else ""),
+            next_step_at=(e.next_step_at.isoformat() if e.next_step_at else None),
         )
         for e in enrollments
     ]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from signalops.connectors.base import Connector, RawPost
@@ -38,7 +38,7 @@ class TwikitConnector(Connector):
         if self._client is not None and self._logged_in:
             return self._client
 
-        from twikit import Client  # type: ignore[import-untyped]
+        from twikit import Client
 
         self._client = Client("en-US")
 
@@ -94,9 +94,7 @@ class TwikitConnector(Connector):
                 raw_post = self._tweet_to_raw_post(tweet)
                 results.append(raw_post)
             except Exception:  # noqa: BLE001
-                logger.warning(
-                    "Failed to parse tweet %s", getattr(tweet, "id", "?")
-                )
+                logger.warning("Failed to parse tweet %s", getattr(tweet, "id", "?"))
                 continue
 
         return results
@@ -165,16 +163,14 @@ class TwikitConnector(Connector):
         user = tweet.user
         created_at: datetime
         if isinstance(tweet.created_at, str):
-            created_at = datetime.strptime(
-                tweet.created_at, "%a %b %d %H:%M:%S %z %Y"
-            )
+            created_at = datetime.strptime(tweet.created_at, "%a %b %d %H:%M:%S %z %Y")
         else:
             created_at = tweet.created_at
 
         if created_at.tzinfo is not None:
-            created_at = created_at.astimezone(timezone.utc)
+            created_at = created_at.astimezone(UTC)
         else:
-            created_at = created_at.replace(tzinfo=timezone.utc)
+            created_at = created_at.replace(tzinfo=UTC)
 
         return RawPost(
             platform="x",
@@ -196,18 +192,11 @@ class TwikitConnector(Connector):
                 "views": getattr(tweet, "view_count", 0),
             },
             entities={
-                "hashtags": [
-                    h.get("text", "")
-                    for h in (getattr(tweet, "hashtags", None) or [])
-                ],
+                "hashtags": [h.get("text", "") for h in (getattr(tweet, "hashtags", None) or [])],
                 "mentions": [
-                    m.get("screen_name", "")
-                    for m in (getattr(tweet, "mentions", None) or [])
+                    m.get("screen_name", "") for m in (getattr(tweet, "mentions", None) or [])
                 ],
-                "urls": [
-                    u.get("expanded_url", "")
-                    for u in (getattr(tweet, "urls", None) or [])
-                ],
+                "urls": [u.get("expanded_url", "") for u in (getattr(tweet, "urls", None) or [])],
             },
             raw_json={"twikit_id": str(tweet.id)},
         )

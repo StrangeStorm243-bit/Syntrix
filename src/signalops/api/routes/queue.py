@@ -8,8 +8,6 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
-
 from signalops.api.auth import require_api_key
 from signalops.api.deps import get_db
 from signalops.api.schemas import (
@@ -26,6 +24,8 @@ from signalops.storage.database import (
     NormalizedPost,
     Score,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -233,19 +233,19 @@ def send_approved(
     for draft in drafts:
         try:
             text = str(draft.text_final or draft.text_generated)
-            post = db.query(NormalizedPost).filter(
-                NormalizedPost.id == draft.normalized_post_id
-            ).first()
+            post = (
+                db.query(NormalizedPost)
+                .filter(NormalizedPost.id == draft.normalized_post_id)
+                .first()
+            )
 
             if connector and post:
-                reply_id = connector.post_reply(
-                    str(post.platform_id), text
-                )
+                reply_id = connector.post_reply(str(post.platform_id), text)
                 draft.sent_post_id = reply_id  # type: ignore[assignment]
 
             draft.status = DraftStatus.SENT  # type: ignore[assignment]
             draft.sent_at = datetime.now(UTC)  # type: ignore[assignment]
-            sent_ids.append(int(draft.id))  # type: ignore[arg-type]
+            sent_ids.append(int(draft.id))
         except Exception:  # noqa: BLE001
             logger.exception("Failed to send draft %s", draft.id)
             failed_count += 1

@@ -134,12 +134,10 @@ class TestQueueSend:
         mock_connector.post_reply.return_value = "reply_tweet_999"
 
         with patch.dict(os.environ, {"SIGNALOPS_DB_URL": seeded_db}):
-            with patch(
-                "signalops.connectors.factory.ConnectorFactory"
-            ) as MockFactory:
+            with patch("signalops.connectors.factory.ConnectorFactory") as mock_factory_cls:
                 mock_factory_instance = MagicMock()
                 mock_factory_instance.create.return_value = mock_connector
-                MockFactory.return_value = mock_factory_instance
+                mock_factory_cls.return_value = mock_factory_instance
 
                 app = create_app()
                 with TestClient(app) as client:
@@ -155,12 +153,10 @@ class TestQueueSend:
     def test_send_without_connector_dry_run(self, seeded_db: str) -> None:
         """POST /api/queue/send marks as sent even without connector."""
         with patch.dict(os.environ, {"SIGNALOPS_DB_URL": seeded_db}):
-            with patch(
-                "signalops.connectors.factory.ConnectorFactory"
-            ) as MockFactory:
+            with patch("signalops.connectors.factory.ConnectorFactory") as mock_factory_cls:
                 mock_factory_instance = MagicMock()
                 mock_factory_instance.create.side_effect = ValueError("No token")
-                MockFactory.return_value = mock_factory_instance
+                mock_factory_cls.return_value = mock_factory_instance
 
                 app = create_app()
                 with TestClient(app) as client:
@@ -193,9 +189,7 @@ class TestAuthOptional:
         # Seed a project first
         engine = get_engine(db_url)
         session = get_session(engine)
-        project = Project(
-            id="test", name="Test", config_path="projects/spectra.yaml"
-        )
+        project = Project(id="test", name="Test", config_path="projects/spectra.yaml")
         project.is_active = True  # type: ignore[assignment]
         session.add(project)
         session.commit()
