@@ -55,6 +55,15 @@ class OutcomeType(enum.Enum):
     NEGATIVE = "negative"
 
 
+class EnrollmentStatus(str, enum.Enum):
+    """Status of a lead's enrollment in a sequence."""
+
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    EXITED = "exited"
+
+
 # ── Projects ──
 
 
@@ -350,6 +359,104 @@ class PreferencePair(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     __table_args__ = (Index("ix_pref_pair_project", "project_id"),)
+
+
+# ── Sequence Engine (Bridge) ──
+
+
+class Sequence(Base):
+    """Outreach sequence template."""
+
+    __tablename__ = "sequences"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
+    name = Column(String(200), nullable=False)
+    description = Column(Text)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    steps = relationship(
+        "SequenceStep",
+        back_populates="sequence",
+        order_by="SequenceStep.step_order",
+    )
+    enrollments = relationship(
+        "Enrollment",
+        back_populates="sequence",
+    )
+
+
+class SequenceStep(Base):
+    """Single step within an outreach sequence."""
+
+    __tablename__ = "sequence_steps"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sequence_id = Column(Integer, ForeignKey("sequences.id"), nullable=False)
+    step_order = Column(Integer, nullable=False)
+    action_type = Column(String(50), nullable=False)  # like, follow, reply, wait, check_response
+    delay_hours = Column(Float, default=0.0)
+    config_json = Column(Text, default="{}")
+    requires_approval = Column(Boolean, default=False)
+
+    sequence = relationship(
+        "Sequence",
+        back_populates="steps",
+    )
+
+
+class Enrollment(Base):
+    """Tracks a lead's progress through a sequence."""
+
+    __tablename__ = "enrollments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    normalized_post_id = Column(
+        Integer, ForeignKey("normalized_posts.id"), nullable=False
+    )
+    sequence_id = Column(Integer, ForeignKey("sequences.id"), nullable=False)
+    project_id = Column(String(64), ForeignKey("projects.id"), nullable=False)
+    current_step_order = Column(Integer, default=0)
+    status: Column[Any] = Column(
+        SAEnum(EnrollmentStatus), default=EnrollmentStatus.ACTIVE
+    )
+    enrolled_at = Column(DateTime, server_default=func.now())
+    next_step_at = Column(DateTime)
+    completed_at = Column(DateTime)
+
+    sequence = relationship(
+        "Sequence",
+        back_populates="enrollments",
+    )
+    executions = relationship(
+        "StepExecution",
+        back_populates="enrollment",
+    )
+
+    __table_args__ = (
+        Index("ix_enrollment_status_next", "status", "next_step_at"),
+        Index("ix_enrollment_project", "project_id"),
+    )
+
+
+class StepExecution(Base):
+    """Record of an executed sequence step."""
+
+    __tablename__ = "step_executions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    enrollment_id = Column(Integer, ForeignKey("enrollments.id"), nullable=False)
+    step_id = Column(Integer, ForeignKey("sequence_steps.id"), nullable=False)
+    action_type = Column(String(50), nullable=False)
+    status = Column(String(50), default="pending")
+    executed_at = Column(DateTime)
+    result_json = Column(Text, default="{}")
+
+    enrollment = relationship(
+        "Enrollment",
+        back_populates="executions",
+    )
 
 
 # ── Engine / Session helpers ──
