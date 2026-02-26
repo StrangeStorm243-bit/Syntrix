@@ -8,12 +8,12 @@ const BADGES = [
 
 export function TrustBar() {
   return (
-    <section className="border-y border-white/5 py-6">
+    <section className="border-y border-slate-200 bg-white py-6">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-6 px-6">
         {BADGES.map((badge) => (
           <div
             key={badge.label}
-            className="flex items-center gap-2 rounded-full border border-white/5 px-4 py-1.5 text-xs text-slate-500"
+            className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-1.5 text-xs text-slate-500"
           >
             <badge.icon className="h-3.5 w-3.5" />
             <span className="font-mono">{badge.label}</span>
@@ -25,7 +25,7 @@ export function TrustBar() {
           href="https://github.com/StrangeStorm243-bit/Syntrix"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-full border border-white/5 px-4 py-1.5 text-xs text-slate-500 transition-colors duration-200 hover:text-slate-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
+          className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-1.5 text-xs text-slate-500 transition-colors duration-200 hover:text-slate-700 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none"
         >
           <img
             src="https://img.shields.io/github/stars/StrangeStorm243-bit/Syntrix?style=flat&color=22C55E&labelColor=0F172A"

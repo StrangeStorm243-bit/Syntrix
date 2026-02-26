@@ -81,16 +81,16 @@ export function TerminalShowcase() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <section className="py-24">
+    <section className="bg-white py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-16 text-center">
-          <h2 className="font-heading text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="font-heading text-3xl font-bold text-slate-900 sm:text-4xl">
             See it{" "}
-            <span className="bg-gradient-to-r from-aurora-cyan to-aurora-magenta bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-cyan-600 to-fuchsia-600 bg-clip-text text-transparent">
               in action
             </span>
           </h2>
-          <p className="mt-4 font-body text-lg text-slate-400">
+          <p className="mt-4 font-body text-lg text-slate-500">
             Real CLI output from the Syntrix pipeline.
           </p>
         </div>
@@ -106,8 +106,8 @@ export function TerminalShowcase() {
                 onClick={() => setActiveTab(i)}
                 className={`rounded-lg px-4 py-2 font-mono text-xs transition-colors duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400/50 focus-visible:outline-none ${
                   activeTab === i
-                    ? "bg-white/10 text-white border border-white/20"
-                    : "text-slate-500 hover:text-slate-300 border border-transparent"
+                    ? "bg-slate-900 text-white border border-slate-700"
+                    : "text-slate-500 hover:text-slate-700 border border-slate-200"
                 }`}
               >
                 {tab.label}
