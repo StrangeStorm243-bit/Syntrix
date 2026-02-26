@@ -24,7 +24,7 @@ const STEPS = [
 
 export function QuickStart() {
   return (
-    <section id="quickstart" className="relative py-24">
+    <section className="relative py-24">
       {/* Magenta aurora accent at bottom */}
       <div
         className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-[300px] w-[500px] rounded-full opacity-15 blur-[80px]"
