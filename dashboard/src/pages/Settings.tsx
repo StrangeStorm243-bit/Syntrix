@@ -29,6 +29,7 @@ import {
   Key,
   Shield,
   Save,
+  Clock,
 } from 'lucide-react';
 
 interface TestConnectionResponse {
@@ -78,6 +79,7 @@ export default function Settings() {
   // Sequence settings
   const [maxActionsPerDay, setMaxActionsPerDay] = useState(20);
   const [requireApproval, setRequireApproval] = useState(true);
+  const [pipelineInterval, setPipelineInterval] = useState(4);
 
   const updateSettings = useUpdateSettings();
 
@@ -91,6 +93,7 @@ export default function Settings() {
       llm_api_key: llmApiKey || null,
       max_actions_per_day: maxActionsPerDay,
       require_approval: requireApproval,
+      pipeline_interval_hours: pipelineInterval,
     };
     updateSettings.mutate(payload, {
       onSuccess: (res) => {
@@ -298,6 +301,38 @@ export default function Settings() {
                 className="data-[state=checked]:bg-cyber-pink"
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Pipeline Auto-Run */}
+        <Card className="glass border-white/10 bg-cyber-surface/80 backdrop-blur-xl">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-cyber-pink" />
+              <CardTitle className="text-cyber-text text-sm">Pipeline Auto-Run</CardTitle>
+            </div>
+            <CardDescription className="text-cyber-text-dim text-xs">
+              How often the pipeline automatically collects and scores new leads.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-cyber-text-dim text-sm">Run Every</Label>
+              <span className="rounded-full border border-cyber-pink/30 bg-cyber-pink/10 px-2.5 py-0.5 text-xs font-mono text-cyber-pink">
+                {pipelineInterval}h
+              </span>
+            </div>
+            <Slider
+              value={[pipelineInterval]}
+              onValueChange={(v) => setPipelineInterval(v[0])}
+              min={1}
+              max={24}
+              step={1}
+              className="[&_[data-slot=slider-track]]:bg-cyber-surface-bright [&_[data-slot=slider-range]]:bg-cyber-pink [&_[data-slot=slider-thumb]]:border-cyber-pink [&_[data-slot=slider-thumb]]:bg-cyber-void"
+            />
+            <p className="text-[10px] text-cyber-text-dim/70">
+              Pipeline collects tweets, judges relevance, scores leads, and generates drafts automatically.
+            </p>
           </CardContent>
         </Card>
 

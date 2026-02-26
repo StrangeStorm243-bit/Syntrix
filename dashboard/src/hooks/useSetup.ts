@@ -85,6 +85,7 @@ export interface SettingsUpdateRequest {
   llm_api_key?: string | null;
   max_actions_per_day?: number | null;
   require_approval?: boolean | null;
+  pipeline_interval_hours?: number | null;
 }
 
 interface SettingsUpdateResponse {

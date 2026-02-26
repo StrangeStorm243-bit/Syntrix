@@ -86,6 +86,7 @@ class SettingsUpdateRequest(BaseModel):
     llm_api_key: str | None = None
     max_actions_per_day: int | None = None
     require_approval: bool | None = None
+    pipeline_interval_hours: int | None = None
 
 
 class SettingsUpdateResponse(BaseModel):
@@ -322,6 +323,9 @@ def update_settings(
     if req.require_approval is not None:
         config["require_approval"] = req.require_approval
         changed = True
+
+    if req.pipeline_interval_hours is not None:
+        os.environ["SIGNALOPS_PIPELINE_INTERVAL"] = str(req.pipeline_interval_hours)
 
     if changed:
         with open(config_path, "w") as f:

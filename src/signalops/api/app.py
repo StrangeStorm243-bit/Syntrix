@@ -57,9 +57,8 @@ def _run_pipeline_tick(db_url: str) -> None:
         from signalops.models.judge_model import LLMPromptJudge
         from signalops.models.llm_gateway import LLMGateway
         from signalops.pipeline.orchestrator import PipelineOrchestrator
-        from signalops.storage.database import Project
+        from signalops.storage.database import Project, get_session
         from signalops.storage.database import get_engine as _get_engine
-        from signalops.storage.database import get_session
 
         engine = _get_engine(db_url)
         session = get_session(engine)
