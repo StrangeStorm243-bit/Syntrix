@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.mypy_cache
+.ruff_cache
+.pytest_cache
+htmlcov
+.coverage
+
+# Node (dashboard has its own build)
+dashboard/node_modules
+dashboard/dist
+dashboard/.vite
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docs and CI
+docs/
+.github/
+*.md
+!README.md
+
+# Dev/test files
+tests/
+tasks/
+.env
+.env.*
+data/

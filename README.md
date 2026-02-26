@@ -62,7 +62,50 @@ Every reply requires human approval. No auto-send, no multi-account, no browser 
 
 ---
 
-## Quick Start
+## Quick Start (Docker)
+
+The fastest way to run Syntrix — one command, zero dependencies.
+
+```bash
+git clone https://github.com/StrangeStorm243-bit/Syntrix.git
+cd Syntrix
+docker compose up
+```
+
+This starts 3 services:
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| **Dashboard** | [localhost:3000](http://localhost:3000) | Web UI — onboarding wizard, leads, queue, analytics |
+| **API** | [localhost:8400](http://localhost:8400) | FastAPI backend (auto-proxied by dashboard) |
+| **Ollama** | localhost:11434 | Free local LLM for judging + drafting |
+
+On first run, Ollama automatically pulls the required models (`llama3.2:3b` + `mistral:7b` — ~6 GB total). This takes a few minutes.
+
+**Open [http://localhost:3000](http://localhost:3000)** — the onboarding wizard walks you through setup:
+1. Describe your company and product
+2. Define your ideal customer
+3. Connect your Twitter account
+4. Configure your reply persona
+5. Choose an outreach sequence
+
+After setup, hit "Run Pipeline" to start collecting and scoring leads.
+
+### Stopping and restarting
+
+```bash
+docker compose down      # Stop all services
+docker compose up -d     # Start in background
+docker compose logs -f   # Follow logs
+```
+
+Your data persists in `./data/` (SQLite database) and `./projects/` (project configs). Ollama model weights are stored in a Docker volume.
+
+---
+
+## Quick Start (CLI)
+
+For developers who want to run Syntrix without Docker.
 
 ### 1. Install
 
@@ -75,7 +118,7 @@ Or from source:
 ```bash
 git clone https://github.com/StrangeStorm243-bit/Syntrix.git
 cd Syntrix
-pip install -e ".[dev]"
+pip install -e ".[dev,bridge]"
 ```
 
 ### 2. Configure credentials
@@ -145,18 +188,24 @@ The dashboard provides a visual interface for the entire workflow:
 
 | Page | What It Shows |
 |------|---------------|
-| **Dashboard** | Metric cards (leads, pending drafts, sent, outcomes) + pipeline funnel chart |
-| **Leads** | Paginated lead table with score badges, judgment labels, and filters |
+| **Onboarding** | 5-step setup wizard (shown on first visit) |
+| **Dashboard** | Metric cards (leads, pending drafts, sent, active sequences) + pipeline funnel |
+| **Leads** | Paginated lead table with score badges, judgment labels, enrollment status |
 | **Queue** | Draft cards with approve/edit/reject actions and inline editing |
+| **Sequences** | Outreach sequences with step visualization and enrollment tracking |
 | **Analytics** | Score distribution, conversion funnel, query performance, judge accuracy |
 | **Experiments** | A/B test overview with model comparisons and traffic splits |
-| **Settings** | API key configuration |
+| **Settings** | Twitter credentials, LLM config, sequence settings, rate limits |
+
+With Docker: `docker compose up` then visit [localhost:3000](http://localhost:3000).
+
+For local development:
 
 ```bash
-# Start the API server
+# Terminal 1: API server
 signalops-api                    # Runs on port 8400
 
-# Start the frontend dev server
+# Terminal 2: Frontend dev server
 cd dashboard && npm run dev      # Runs on port 5173, proxies to API
 ```
 

@@ -89,8 +89,9 @@ def create_app(db_url: str | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS — allow Vite dev server and configurable origins
-    allowed_origins = os.environ.get("SIGNALOPS_CORS_ORIGINS", "http://localhost:5173").split(",")
+    # CORS — allow dashboard (dev + Docker) and configurable origins
+    default_origins = "http://localhost:5173,http://localhost:3000"
+    allowed_origins = os.environ.get("SIGNALOPS_CORS_ORIGINS", default_origins).split(",")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,
@@ -126,6 +127,11 @@ def create_app(db_url: str | None = None) -> FastAPI:
     from signalops.api.websocket import websocket_endpoint
 
     app.websocket("/ws/pipeline")(websocket_endpoint)
+
+    # Health check — used by Docker HEALTHCHECK and depends_on condition
+    @app.get("/api/health", tags=["system"])
+    def health_check() -> dict[str, str]:
+        return {"status": "ok"}
 
     return app
 
