@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from '../lib/api';
+import { apiGet, apiPost, apiPut } from '../lib/api';
 
 export interface SetupStatus {
   is_complete: boolean;
@@ -18,39 +18,32 @@ interface TestConnectionResponse {
 }
 
 export interface SetupRequest {
-  company: {
-    name: string;
-    url: string;
-    description: string;
-    problem_statement: string;
-  };
-  icp: {
-    role_keywords: string[];
-    tweet_topics: string[];
-    min_followers: number;
-    languages: string[];
-  };
-  twitter: {
-    username: string;
-    password: string;
-  };
-  persona: {
-    name: string;
-    role: string;
-    tone: string;
-    voice_notes: string;
-    example_reply: string;
-  };
-  llm: {
-    provider: string;
-    model: string;
-    api_key: string;
-  };
-  outreach: {
-    sequence_template: string;
-    max_actions_per_day: number;
-    require_approval: boolean;
-  };
+  // Step 1: Company
+  project_name: string;
+  product_url: string;
+  description: string;
+  problem_statement: string;
+  // Step 2: ICP
+  role_keywords: string[];
+  tweet_topics: string[];
+  min_followers: number;
+  languages: string[];
+  // Step 3: Twitter
+  twitter_username: string;
+  twitter_password: string;
+  x_api_key?: string | null;
+  // Step 4: Persona + LLM
+  persona_name: string;
+  persona_role: string;
+  persona_tone: string;
+  voice_notes: string;
+  example_reply: string;
+  llm_provider: string;
+  llm_api_key?: string | null;
+  // Step 5: Outreach
+  sequence_template: string;
+  max_actions_per_day: number;
+  require_approval: boolean;
 }
 
 interface SetupResponse {
@@ -82,5 +75,26 @@ export function useCompleteSetup() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['setup', 'status'] });
     },
+  });
+}
+
+export interface SettingsUpdateRequest {
+  twitter_username?: string | null;
+  twitter_password?: string | null;
+  llm_provider?: string | null;
+  llm_api_key?: string | null;
+  max_actions_per_day?: number | null;
+  require_approval?: boolean | null;
+}
+
+interface SettingsUpdateResponse {
+  success: boolean;
+  message: string;
+}
+
+export function useUpdateSettings() {
+  return useMutation({
+    mutationFn: (data: SettingsUpdateRequest) =>
+      apiPut<SettingsUpdateResponse>('/api/settings', data),
   });
 }

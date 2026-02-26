@@ -49,6 +49,7 @@ Issues = "https://github.com/StrangeStorm243-bit/Syntrix/issues"
 bridge = [
     "twikit>=2.0",
     "apscheduler>=3.10",
+    "cryptography>=42.0",
 ]
 dev = [
     "pytest>=8.0",
@@ -104,6 +105,8 @@ module = [
     "twikit.*",
     "apscheduler",
     "apscheduler.*",
+    "cryptography",
+    "cryptography.*",
 ]
 ignore_missing_imports = true
 

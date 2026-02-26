@@ -5,6 +5,8 @@ import { GlassCard } from '../components/cyber/GlassCard';
 import { NeonInput } from '../components/cyber/NeonInput';
 import { NeonButton } from '../components/cyber/NeonButton';
 import { usePerformanceMode } from '../hooks/usePerformanceMode';
+import { useUpdateSettings } from '../hooks/useSetup';
+import type { SettingsUpdateRequest } from '../hooks/useSetup';
 import { Toast } from '../components/Toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -26,6 +28,7 @@ import {
   Loader2,
   Key,
   Shield,
+  Save,
 } from 'lucide-react';
 
 interface TestConnectionResponse {
@@ -76,7 +79,34 @@ export default function Settings() {
   const [maxActionsPerDay, setMaxActionsPerDay] = useState(20);
   const [requireApproval, setRequireApproval] = useState(true);
 
+  const updateSettings = useUpdateSettings();
+
   const dismissToast = useCallback(() => setToast(null), []);
+
+  function handleSaveSettings() {
+    const payload: SettingsUpdateRequest = {
+      twitter_username: twitterUsername || null,
+      twitter_password: twitterPassword || null,
+      llm_provider: llmProvider,
+      llm_api_key: llmApiKey || null,
+      max_actions_per_day: maxActionsPerDay,
+      require_approval: requireApproval,
+    };
+    updateSettings.mutate(payload, {
+      onSuccess: (res) => {
+        setToast({
+          message: res.success ? 'Settings saved successfully!' : (res.message || 'Save failed'),
+          type: res.success ? 'success' : 'error',
+        });
+      },
+      onError: (err) => {
+        setToast({
+          message: err instanceof Error ? err.message : 'Failed to save settings',
+          type: 'error',
+        });
+      },
+    });
+  }
 
   function handleSaveApiKey() {
     setApiKey(key);
@@ -270,6 +300,31 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Save Settings */}
+        <button
+          type="button"
+          onClick={handleSaveSettings}
+          disabled={updateSettings.isPending}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-cyber-pink bg-cyber-pink/10 px-6 py-3 text-sm font-mono font-semibold text-cyber-pink transition-all duration-200 hover:bg-cyber-pink/20 hover:shadow-[0_0_16px_rgba(255,20,147,0.4)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {updateSettings.isPending ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Saving...
+            </>
+          ) : updateSettings.isSuccess ? (
+            <>
+              <Check size={16} className="text-green-400" />
+              Saved!
+            </>
+          ) : (
+            <>
+              <Save size={16} />
+              Save Settings
+            </>
+          )}
+        </button>
 
         {/* Performance Mode */}
         <GlassCard>

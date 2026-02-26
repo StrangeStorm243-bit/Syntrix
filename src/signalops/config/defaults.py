@@ -20,6 +20,12 @@ DEFAULT_RATE_LIMITS = {
     "max_replies_per_day": 20,
 }
 
+# LLM defaults (Ollama — $0/month)
+DEFAULT_JUDGE_MODEL = "ollama/llama3.2:3b"
+DEFAULT_DRAFT_MODEL = "ollama/mistral:7b"
+DEFAULT_LLM_TEMPERATURE = 0.3
+DEFAULT_LLM_MAX_TOKENS = 1024
+
 # Platform support
 SUPPORTED_PLATFORMS = ["x"]
 SUPPORTED_LANGUAGES = ["en", "es", "fr", "de", "pt", "ja"]

@@ -93,9 +93,12 @@ class ConnectorFactory:
         """Build a connector instance for the given platform."""
         if platform == Platform.X:
             # Prefer twikit (free) if credentials are available
+            from signalops.utils.credentials import decrypt_credential
+
             twikit_username = os.environ.get("TWIKIT_USERNAME", "")
-            twikit_password = os.environ.get("TWIKIT_PASSWORD", "")
-            if twikit_username and twikit_password:
+            twikit_password_raw = os.environ.get("TWIKIT_PASSWORD", "")
+            if twikit_username and twikit_password_raw:
+                twikit_password = decrypt_credential(twikit_password_raw)
                 return cls._build_twikit_connector(twikit_username, twikit_password)
             # Fall back to X API v2 if bearer token exists
             return cls._build_x_connector(config, **kwargs)

@@ -93,6 +93,9 @@ class SequenceEngine:
             if step.requires_approval and not self._has_approved_draft(enrollment):
                 continue  # Wait for human approval
 
+            if not self._check_rate_limit(str(step.action_type)):
+                continue  # Rate limited, skip for now
+
             success = self._execute_step(enrollment, step)
             if success:
                 executed_count += 1
@@ -100,6 +103,66 @@ class SequenceEngine:
 
         self.session.commit()
         return executed_count
+
+    def _check_rate_limit(self, action_type: str) -> bool:
+        """Check if rate limit allows executing this action type."""
+        now = datetime.now(UTC)
+
+        if action_type == "like":
+            one_hour_ago = now - timedelta(hours=1)
+            count = (
+                self.session.query(StepExecution)
+                .filter(
+                    StepExecution.action_type == "like",
+                    StepExecution.status == "executed",
+                    StepExecution.executed_at >= one_hour_ago,
+                )
+                .count()
+            )
+            if count >= self.max_likes_per_hour:
+                logger.warning(
+                    "Rate limit: %d/%d likes in last hour",
+                    count,
+                    self.max_likes_per_hour,
+                )
+                return False
+        elif action_type == "follow":
+            one_hour_ago = now - timedelta(hours=1)
+            count = (
+                self.session.query(StepExecution)
+                .filter(
+                    StepExecution.action_type == "follow",
+                    StepExecution.status == "executed",
+                    StepExecution.executed_at >= one_hour_ago,
+                )
+                .count()
+            )
+            if count >= self.max_follows_per_hour:
+                logger.warning(
+                    "Rate limit: %d/%d follows in last hour",
+                    count,
+                    self.max_follows_per_hour,
+                )
+                return False
+        elif action_type == "reply":
+            one_day_ago = now - timedelta(days=1)
+            count = (
+                self.session.query(StepExecution)
+                .filter(
+                    StepExecution.action_type == "reply",
+                    StepExecution.status == "executed",
+                    StepExecution.executed_at >= one_day_ago,
+                )
+                .count()
+            )
+            if count >= self.max_replies_per_day:
+                logger.warning(
+                    "Rate limit: %d/%d replies in last day",
+                    count,
+                    self.max_replies_per_day,
+                )
+                return False
+        return True
 
     def _get_current_step(self, enrollment: Enrollment) -> SequenceStep | None:
         """Get the next step to execute for this enrollment."""

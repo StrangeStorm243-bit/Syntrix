@@ -625,39 +625,26 @@ export default function Onboarding() {
 
   function handleSubmit() {
     const payload: SetupRequest = {
-      company: {
-        name: store.companyName,
-        url: store.companyUrl,
-        description: store.companyDescription,
-        problem_statement: store.problemStatement,
-      },
-      icp: {
-        role_keywords: store.roleKeywords,
-        tweet_topics: store.tweetTopics,
-        min_followers: store.minFollowers,
-        languages: store.languages,
-      },
-      twitter: {
-        username: store.twitterUsername,
-        password: store.twitterPassword,
-      },
-      persona: {
-        name: store.personaName,
-        role: store.personaRole,
-        tone: store.personaTone,
-        voice_notes: store.voiceNotes,
-        example_reply: store.exampleReply,
-      },
-      llm: {
-        provider: store.llmProvider,
-        model: store.llmModel,
-        api_key: store.llmApiKey,
-      },
-      outreach: {
-        sequence_template: store.sequenceTemplate,
-        max_actions_per_day: store.maxActionsPerDay,
-        require_approval: store.requireApproval,
-      },
+      project_name: store.companyName,
+      product_url: store.companyUrl,
+      description: store.companyDescription,
+      problem_statement: store.problemStatement,
+      role_keywords: store.roleKeywords,
+      tweet_topics: store.tweetTopics,
+      min_followers: store.minFollowers,
+      languages: store.languages,
+      twitter_username: store.twitterUsername,
+      twitter_password: store.twitterPassword,
+      persona_name: store.personaName,
+      persona_role: store.personaRole,
+      persona_tone: store.personaTone,
+      voice_notes: store.voiceNotes,
+      example_reply: store.exampleReply,
+      llm_provider: store.llmProvider,
+      llm_api_key: store.llmApiKey || null,
+      sequence_template: store.sequenceTemplate,
+      max_actions_per_day: store.maxActionsPerDay,
+      require_approval: store.requireApproval,
     };
 
     setSubmitError(null);

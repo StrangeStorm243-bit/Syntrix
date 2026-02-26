@@ -390,3 +390,171 @@ class TestCreateDefaultSequences:
             "reply",
             "check_response",
         ]
+
+
+class TestRateLimitEnforcement:
+    """Test that rate limits are actually enforced during step execution."""
+
+    def setup_method(self) -> None:
+        self.engine = create_engine("sqlite:///:memory:")
+        init_db(self.engine)
+        self.session = Session(self.engine)
+
+        # Seed a project
+        proj = Project(id="test", name="Test", config_path="t.yaml")
+        self.session.add(proj)
+
+        # Seed a raw post + normalized post
+        raw = RawPost(project_id="test", platform="x", platform_id="tw1", raw_json={})
+        self.session.add(raw)
+        self.session.flush()
+        norm = NormalizedPost(
+            raw_post_id=raw.id,
+            project_id="test",
+            platform="x",
+            platform_id="tw1",
+            author_id="u1",
+            author_username="testuser",
+            text_original="Need help",
+            text_cleaned="Need help",
+            created_at=datetime.now(UTC),
+        )
+        self.session.add(norm)
+        self.session.flush()
+        self.norm_id: int = norm.id  # type: ignore[assignment]
+
+        # Create a simple "like-only" sequence
+        seq = Sequence(project_id="test", name="Like Only")
+        self.session.add(seq)
+        self.session.flush()
+        self.seq_id: int = seq.id  # type: ignore[assignment]
+        step = SequenceStep(
+            sequence_id=seq.id,
+            step_order=1,
+            action_type="like",
+            delay_hours=0,
+        )
+        self.session.add(step)
+        self.session.commit()
+
+        self.connector = _make_connector()
+
+    def teardown_method(self) -> None:
+        self.session.close()
+        self.engine.dispose()
+
+    def test_like_rate_limit_blocks_when_exceeded(self) -> None:
+        """_check_rate_limit returns False when like limit is reached."""
+        engine = SequenceEngine(self.session, self.connector, max_likes_per_hour=2)
+
+        # Insert 2 executed like step executions within the last hour
+        now = datetime.now(UTC)
+        for i in range(2):
+            execution = StepExecution(
+                enrollment_id=1,
+                step_id=1,
+                action_type="like",
+                status="executed",
+                executed_at=now - timedelta(minutes=10 + i),
+                result_json="{}",
+            )
+            self.session.add(execution)
+        self.session.commit()
+
+        assert engine._check_rate_limit("like") is False
+
+    def test_different_action_type_not_blocked(self) -> None:
+        """_check_rate_limit for 'follow' is True even when likes are at limit."""
+        engine = SequenceEngine(self.session, self.connector, max_likes_per_hour=2)
+
+        # Insert 2 executed like step executions
+        now = datetime.now(UTC)
+        for i in range(2):
+            execution = StepExecution(
+                enrollment_id=1,
+                step_id=1,
+                action_type="like",
+                status="executed",
+                executed_at=now - timedelta(minutes=10 + i),
+                result_json="{}",
+            )
+            self.session.add(execution)
+        self.session.commit()
+
+        assert engine._check_rate_limit("follow") is True
+
+    def test_wait_action_always_allowed(self) -> None:
+        """_check_rate_limit always returns True for 'wait' actions."""
+        engine = SequenceEngine(self.session, self.connector, max_likes_per_hour=0)
+        assert engine._check_rate_limit("wait") is True
+
+    def test_check_response_always_allowed(self) -> None:
+        """_check_rate_limit always returns True for 'check_response' actions."""
+        engine = SequenceEngine(self.session, self.connector, max_likes_per_hour=0)
+        assert engine._check_rate_limit("check_response") is True
+
+    def test_rate_limit_skips_enrollment_in_execute_due_steps(self) -> None:
+        """execute_due_steps() skips enrollment when rate limit is hit."""
+        engine = SequenceEngine(self.session, self.connector, max_likes_per_hour=2)
+
+        # Insert 2 executed like step executions to hit the limit
+        now = datetime.now(UTC)
+        for i in range(2):
+            execution = StepExecution(
+                enrollment_id=999,
+                step_id=999,
+                action_type="like",
+                status="executed",
+                executed_at=now - timedelta(minutes=5 + i),
+                result_json="{}",
+            )
+            self.session.add(execution)
+        self.session.commit()
+
+        # Enroll and make it due
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.next_step_at = datetime.now(UTC)  # type: ignore[assignment]
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 0
+        self.connector.like.assert_not_called()
+
+    def test_reply_rate_limit_uses_24h_window(self) -> None:
+        """Reply rate limit counts executions in the last 24 hours."""
+        engine = SequenceEngine(self.session, self.connector, max_replies_per_day=1)
+
+        # Insert a reply execution 23 hours ago (within window)
+        now = datetime.now(UTC)
+        execution = StepExecution(
+            enrollment_id=1,
+            step_id=1,
+            action_type="reply",
+            status="executed",
+            executed_at=now - timedelta(hours=23),
+            result_json="{}",
+        )
+        self.session.add(execution)
+        self.session.commit()
+
+        assert engine._check_rate_limit("reply") is False
+
+    def test_old_executions_not_counted(self) -> None:
+        """Executions older than the window are not counted."""
+        engine = SequenceEngine(self.session, self.connector, max_likes_per_hour=2)
+
+        # Insert 2 executed like step executions from 2 hours ago
+        now = datetime.now(UTC)
+        for i in range(2):
+            execution = StepExecution(
+                enrollment_id=1,
+                step_id=1,
+                action_type="like",
+                status="executed",
+                executed_at=now - timedelta(hours=2, minutes=i),
+                result_json="{}",
+            )
+            self.session.add(execution)
+        self.session.commit()
+
+        assert engine._check_rate_limit("like") is True

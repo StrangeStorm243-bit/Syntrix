@@ -19,6 +19,7 @@ from signalops.api.routes.projects import router as projects_router
 from signalops.api.routes.queue import router as queue_router
 from signalops.api.routes.sequences import router as sequences_router
 from signalops.api.routes.setup import router as setup_router
+from signalops.api.routes.setup import settings_router
 from signalops.api.routes.stats import router as stats_router
 from signalops.storage.database import get_engine, init_db
 
@@ -118,6 +119,7 @@ def create_app(db_url: str | None = None) -> FastAPI:
     app.include_router(experiments_router, prefix="/api/experiments", tags=["experiments"])
     app.include_router(pipeline_router, prefix="/api/pipeline", tags=["pipeline"])
     app.include_router(setup_router)
+    app.include_router(settings_router)
     app.include_router(sequences_router)
 
     # WebSocket endpoint

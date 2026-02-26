@@ -155,8 +155,8 @@ class PlatformsConfig(BaseModel):
 class LLMConfig(BaseModel):
     """LLM configuration — powered by LiteLLM."""
 
-    judge_model: str = "claude-sonnet-4-6"
-    draft_model: str = "claude-sonnet-4-6"
+    judge_model: str = "ollama/llama3.2:3b"
+    draft_model: str = "ollama/mistral:7b"
     temperature: float = 0.3
     max_tokens: int = 1024
     fallback_models: list[str] = []

@@ -17,6 +17,7 @@ from signalops.storage.database import Project
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/setup", tags=["setup"])
+settings_router = APIRouter(prefix="/api", tags=["settings"])
 
 
 # ── Pydantic request/response models ──
@@ -74,6 +75,24 @@ class TestConnectionResult(BaseModel):
     success: bool
     message: str
     username: str | None = None
+
+
+class SettingsUpdateRequest(BaseModel):
+    """Partial update for settings (all fields optional)."""
+
+    twitter_username: str | None = None
+    twitter_password: str | None = None
+    llm_provider: str | None = None
+    llm_api_key: str | None = None
+    max_actions_per_day: int | None = None
+    require_approval: bool | None = None
+
+
+class SettingsUpdateResponse(BaseModel):
+    """Result of a settings update."""
+
+    success: bool
+    message: str
 
 
 # Lazy-loaded TwikitConnector to avoid import errors when twikit is not installed.
@@ -211,8 +230,10 @@ def complete_setup(
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
     # Store Twitter credentials as env vars (for this process)
-    os.environ["TWIKIT_USERNAME"] = req.twitter_username
-    os.environ["TWIKIT_PASSWORD"] = req.twitter_password
+    from signalops.utils.credentials import encrypt_credential
+
+    os.environ["TWIKIT_USERNAME"] = req.twitter_username  # username doesn't need encryption
+    os.environ["TWIKIT_PASSWORD"] = encrypt_credential(req.twitter_password)
     if req.x_api_key:
         os.environ["X_BEARER_TOKEN"] = req.x_api_key
 
@@ -238,4 +259,75 @@ def complete_setup(
         is_complete=True,
         project_id=project_id,
         project_name=req.project_name,
+    )
+
+
+# ── Settings Routes ──
+
+
+@settings_router.put("/settings", response_model=SettingsUpdateResponse)
+def update_settings(
+    req: SettingsUpdateRequest,
+    db: Session = Depends(get_db),
+) -> SettingsUpdateResponse:
+    """Update settings — persists Twitter creds to env vars and config to YAML."""
+    # Find active project
+    project: Project | None = db.query(Project).filter(Project.is_active.is_(True)).first()
+    if project is None:
+        return SettingsUpdateResponse(
+            success=False,
+            message="No active project found. Complete setup first.",
+        )
+
+    # Update env vars for Twitter credentials
+    from signalops.utils.credentials import encrypt_credential
+
+    if req.twitter_username is not None:
+        os.environ["TWIKIT_USERNAME"] = req.twitter_username
+    if req.twitter_password is not None:
+        os.environ["TWIKIT_PASSWORD"] = encrypt_credential(req.twitter_password)
+
+    # Load, modify, and save the project YAML config
+    config_path: str = str(project.config_path)
+    if os.path.exists(config_path):
+        with open(config_path) as f:
+            config: dict[str, Any] = yaml.safe_load(f) or {}
+    else:
+        config = {}
+
+    changed = False
+
+    if req.llm_provider is not None:
+        llm_section = config.setdefault("llm", {})
+        if req.llm_provider == "ollama":
+            llm_section["judge_model"] = "ollama/llama3.2:3b"
+            llm_section["draft_model"] = "ollama/mistral:7b"
+        else:
+            llm_section["judge_model"] = "gpt-4o-mini"
+            llm_section["draft_model"] = "gpt-4o-mini"
+        changed = True
+
+    if req.llm_api_key is not None and req.llm_api_key:
+        env_key = "OPENAI_API_KEY"
+        if req.llm_provider == "anthropic":
+            env_key = "ANTHROPIC_API_KEY"
+        os.environ[env_key] = req.llm_api_key
+
+    if req.max_actions_per_day is not None:
+        rate_section = config.setdefault("rate_limits", {})
+        rate_section["max_replies_per_day"] = req.max_actions_per_day
+        rate_section["max_replies_per_hour"] = max(1, req.max_actions_per_day // 8)
+        changed = True
+
+    if req.require_approval is not None:
+        config["require_approval"] = req.require_approval
+        changed = True
+
+    if changed:
+        with open(config_path, "w") as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+    return SettingsUpdateResponse(
+        success=True,
+        message="Settings updated successfully.",
     )
