@@ -1,16 +1,84 @@
-import { useState } from 'react';
-import { getStoredApiKey, setApiKey } from '../lib/api';
+import { useState, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { getStoredApiKey, setApiKey, apiPost } from '../lib/api';
 import { GlassCard } from '../components/cyber/GlassCard';
 import { NeonInput } from '../components/cyber/NeonInput';
 import { NeonButton } from '../components/cyber/NeonButton';
 import { usePerformanceMode } from '../hooks/usePerformanceMode';
+import { Toast } from '../components/Toast';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
+import { Slider } from '../components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
+  Twitter,
+  Brain,
+  Zap,
+  Check,
+  Loader2,
+  Key,
+  Shield,
+} from 'lucide-react';
+
+interface TestConnectionResponse {
+  success: boolean;
+  message: string;
+}
+
+const PROVIDER_OPTIONS = [
+  { value: 'ollama', label: 'Ollama (Local)' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'anthropic', label: 'Anthropic' },
+];
 
 export default function Settings() {
+  // API Key
   const [key, setKey] = useState(getStoredApiKey());
   const [saved, setSaved] = useState(false);
   const { performanceMode, toggle } = usePerformanceMode();
 
-  function handleSave() {
+  // Twitter credentials
+  const [twitterUsername, setTwitterUsername] = useState('');
+  const [twitterPassword, setTwitterPassword] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const testConnection = useMutation({
+    mutationFn: (data: { username: string; password: string }) =>
+      apiPost<TestConnectionResponse>('/api/setup/test-connection', data),
+    onSuccess: (res) => {
+      setToast({
+        message: res.success ? 'Connection verified!' : (res.message || 'Connection failed'),
+        type: res.success ? 'success' : 'error',
+      });
+    },
+    onError: (err) => {
+      setToast({
+        message: err instanceof Error ? err.message : 'Connection test failed',
+        type: 'error',
+      });
+    },
+  });
+
+  // LLM config
+  const [llmProvider, setLlmProvider] = useState('ollama');
+  const [llmModel, setLlmModel] = useState('');
+  const [llmApiKey, setLlmApiKey] = useState('');
+
+  // Sequence settings
+  const [maxActionsPerDay, setMaxActionsPerDay] = useState(20);
+  const [requireApproval, setRequireApproval] = useState(true);
+
+  const dismissToast = useCallback(() => setToast(null), []);
+
+  function handleSaveApiKey() {
     setApiKey(key);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -20,10 +88,13 @@ export default function Settings() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-cyber-text">Settings</h1>
 
-      <div className="max-w-lg space-y-6">
+      <div className="max-w-2xl space-y-6">
         {/* API Key */}
         <GlassCard>
-          <h2 className="mb-4 text-sm font-medium text-cyber-text-dim">API Configuration</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <Key size={16} className="text-cyber-pink" />
+            <h2 className="text-sm font-medium text-cyber-text">API Configuration</h2>
+          </div>
           <div className="space-y-4">
             <NeonInput
               label="API Key"
@@ -32,20 +103,185 @@ export default function Settings() {
               onChange={(e) => setKey(e.target.value)}
               placeholder="Enter your Syntrix API key"
             />
-            <NeonButton onClick={handleSave}>
+            <NeonButton onClick={handleSaveApiKey}>
               {saved ? 'Saved!' : 'Save'}
             </NeonButton>
           </div>
         </GlassCard>
 
+        {/* Twitter Credentials */}
+        <Card className="glass border-white/10 bg-cyber-surface/80 backdrop-blur-xl">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Twitter size={16} className="text-cyber-pink" />
+              <CardTitle className="text-cyber-text text-sm">Twitter Credentials</CardTitle>
+            </div>
+            <CardDescription className="text-cyber-text-dim text-xs">
+              Credentials used to authenticate with the Twitter API for collecting and posting tweets.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-cyber-text-dim text-sm">Username</Label>
+              <Input
+                value={twitterUsername}
+                onChange={(e) => setTwitterUsername(e.target.value)}
+                placeholder="@username"
+                className="glass border-cyber-pink/20 bg-cyber-surface/50 font-mono text-cyber-text placeholder:text-cyber-text-dim/50 focus-visible:border-cyber-pink/60 focus-visible:ring-cyber-pink/25"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-cyber-text-dim text-sm">Password</Label>
+              <Input
+                type="password"
+                value={twitterPassword}
+                onChange={(e) => setTwitterPassword(e.target.value)}
+                placeholder="Your Twitter password"
+                className="glass border-cyber-pink/20 bg-cyber-surface/50 font-mono text-cyber-text placeholder:text-cyber-text-dim/50 focus-visible:border-cyber-pink/60 focus-visible:ring-cyber-pink/25"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                testConnection.mutate({ username: twitterUsername, password: twitterPassword })
+              }
+              disabled={!twitterUsername || !twitterPassword || testConnection.isPending}
+              className="inline-flex items-center gap-2 rounded-md border border-cyber-pink bg-cyber-pink/10 px-4 py-2 text-sm font-mono font-semibold text-cyber-pink transition-all duration-200 hover:bg-cyber-pink/20 hover:shadow-[0_0_12px_rgba(255,20,147,0.4)] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {testConnection.isPending ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Testing...
+                </>
+              ) : testConnection.isSuccess && testConnection.data.success ? (
+                <>
+                  <Check size={14} className="text-green-400" />
+                  Verified
+                </>
+              ) : (
+                <>
+                  <Twitter size={14} />
+                  Test Connection
+                </>
+              )}
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* LLM Configuration */}
+        <Card className="glass border-white/10 bg-cyber-surface/80 backdrop-blur-xl">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Brain size={16} className="text-cyber-pink" />
+              <CardTitle className="text-cyber-text text-sm">LLM Configuration</CardTitle>
+            </div>
+            <CardDescription className="text-cyber-text-dim text-xs">
+              Configure which language model to use for judging leads and drafting replies.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-cyber-text-dim text-sm">Provider</Label>
+              <Select value={llmProvider} onValueChange={setLlmProvider}>
+                <SelectTrigger className="glass border-cyber-pink/20 bg-cyber-surface/50 font-mono text-cyber-text focus:border-cyber-pink/60 focus:ring-cyber-pink/25">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-cyber-pink/20 bg-cyber-surface backdrop-blur-xl">
+                  {PROVIDER_OPTIONS.map((p) => (
+                    <SelectItem
+                      key={p.value}
+                      value={p.value}
+                      className="font-mono text-cyber-text focus:bg-cyber-pink/10 focus:text-cyber-pink"
+                    >
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-cyber-text-dim text-sm">Model Name</Label>
+              <Input
+                value={llmModel}
+                onChange={(e) => setLlmModel(e.target.value)}
+                placeholder={llmProvider === 'ollama' ? 'llama3.1' : 'gpt-4o-mini'}
+                className="glass border-cyber-pink/20 bg-cyber-surface/50 font-mono text-cyber-text placeholder:text-cyber-text-dim/50 focus-visible:border-cyber-pink/60 focus-visible:ring-cyber-pink/25"
+              />
+            </div>
+            {llmProvider !== 'ollama' && (
+              <div className="space-y-2">
+                <Label className="text-cyber-text-dim text-sm">API Key</Label>
+                <Input
+                  type="password"
+                  value={llmApiKey}
+                  onChange={(e) => setLlmApiKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="glass border-cyber-pink/20 bg-cyber-surface/50 font-mono text-cyber-text placeholder:text-cyber-text-dim/50 focus-visible:border-cyber-pink/60 focus-visible:ring-cyber-pink/25"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sequence Settings */}
+        <Card className="glass border-white/10 bg-cyber-surface/80 backdrop-blur-xl">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Zap size={16} className="text-cyber-pink" />
+              <CardTitle className="text-cyber-text text-sm">Sequence Settings</CardTitle>
+            </div>
+            <CardDescription className="text-cyber-text-dim text-xs">
+              Control how outreach sequences behave.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-cyber-text-dim text-sm">Max Actions Per Day</Label>
+                <span className="rounded-full border border-cyber-pink/30 bg-cyber-pink/10 px-2.5 py-0.5 text-xs font-mono text-cyber-pink">
+                  {maxActionsPerDay}
+                </span>
+              </div>
+              <Slider
+                value={[maxActionsPerDay]}
+                onValueChange={(v) => setMaxActionsPerDay(v[0])}
+                min={5}
+                max={100}
+                step={5}
+                className="[&_[data-slot=slider-track]]:bg-cyber-surface-bright [&_[data-slot=slider-range]]:bg-cyber-pink [&_[data-slot=slider-thumb]]:border-cyber-pink [&_[data-slot=slider-thumb]]:bg-cyber-void"
+              />
+              <p className="text-[10px] text-cyber-text-dim/70">
+                Rate limit for total actions (likes, replies, follows) per day.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-white/5 bg-cyber-surface/30 p-3">
+              <div>
+                <p className="text-sm text-cyber-text">Require Approval</p>
+                <p className="mt-0.5 text-xs text-cyber-text-dim">
+                  Review and approve each reply before it is sent
+                </p>
+              </div>
+              <Switch
+                checked={requireApproval}
+                onCheckedChange={setRequireApproval}
+                className="data-[state=checked]:bg-cyber-pink"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Performance Mode */}
         <GlassCard>
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-medium text-cyber-text">Performance Mode</h2>
-              <p className="mt-1 text-xs text-cyber-text-dim">
-                Disable 3D scenes and particles for better performance on low-end devices.
-              </p>
+            <div className="flex items-center gap-3">
+              <Shield size={16} className="text-cyber-pink" />
+              <div>
+                <h2 className="text-sm font-medium text-cyber-text">Performance Mode</h2>
+                <p className="mt-1 text-xs text-cyber-text-dim">
+                  Disable 3D scenes and particles for better performance on low-end devices.
+                </p>
+              </div>
             </div>
             <button
               type="button"
@@ -65,6 +301,11 @@ export default function Settings() {
           </div>
         </GlassCard>
       </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={dismissToast} />
+      )}
     </div>
   );
 }
