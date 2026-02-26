@@ -11,6 +11,22 @@ interface TerminalTab {
 
 const TABS: TerminalTab[] = [
   {
+    label: "docker",
+    command: "docker compose up",
+    lines: [
+      { text: "Creating syntrix-ollama-1  ... done", color: "text-cta-green" },
+      { text: "Creating syntrix-api-1     ... done", color: "text-cta-green" },
+      { text: "Creating syntrix-dashboard-1 ... done", color: "text-cta-green" },
+      { text: "" },
+      { text: "ollama    | pulling llama3.2:3b..." },
+      { text: "ollama    | pulling mistral:7b..." },
+      { text: "api       | INFO:     Uvicorn running on http://0.0.0.0:8400" },
+      { text: "dashboard | Ready on http://localhost:3000", color: "text-cta-green" },
+      { text: "" },
+      { text: "Open http://localhost:3000 to start the setup wizard", color: "text-aurora-cyan" },
+    ],
+  },
+  {
     label: "run all",
     command: "signalops run all --project spectra",
     lines: [
