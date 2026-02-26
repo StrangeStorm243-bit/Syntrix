@@ -92,6 +92,14 @@ class ConnectorFactory:
     ) -> Connector:
         """Build a connector instance for the given platform."""
         if platform == Platform.X:
+            # Prefer twikit (free) if credentials are available
+            twikit_username = os.environ.get("TWIKIT_USERNAME", "")
+            twikit_password = os.environ.get("TWIKIT_PASSWORD", "")
+            if twikit_username and twikit_password:
+                return cls._build_twikit_connector(
+                    twikit_username, twikit_password
+                )
+            # Fall back to X API v2 if bearer token exists
             return cls._build_x_connector(config, **kwargs)
         if platform == Platform.LINKEDIN:
             return cls._build_linkedin_connector(config, **kwargs)
@@ -99,6 +107,22 @@ class ConnectorFactory:
             return cls._build_socialdata_connector(config, **kwargs)
 
         raise ValueError(f"No connector implementation for platform: {platform.value}")
+
+    @classmethod
+    def _build_twikit_connector(
+        cls, username: str, password: str
+    ) -> Connector:
+        """Build twikit connector (free Twitter access)."""
+        from signalops.connectors.twikit_connector import TwikitConnector
+
+        email = os.environ.get("TWIKIT_EMAIL")
+        cookie_path = os.environ.get("TWIKIT_COOKIE_PATH")
+        return TwikitConnector(
+            username=username,
+            password=password,
+            email=email,
+            cookie_path=cookie_path,
+        )
 
     @classmethod
     def _build_x_connector(cls, config: ProjectConfig | None, **kwargs: Any) -> Connector:

@@ -130,6 +130,20 @@ class LinkedInConnector(Connector):
             "Comment posting requires w_member_social scope and explicit user consent."
         )
 
+    def like(self, post_id: str) -> bool:
+        """Like a LinkedIn post. Not implemented."""
+        raise NotImplementedError(
+            "LinkedIn like is not implemented. "
+            "LinkedIn connector is read-only intelligence only."
+        )
+
+    def follow(self, user_id: str) -> bool:
+        """Follow a LinkedIn user. Not implemented."""
+        raise NotImplementedError(
+            "LinkedIn follow is not implemented. "
+            "LinkedIn connector is read-only intelligence only."
+        )
+
     def health_check(self) -> bool:
         """Verify LinkedIn API connectivity.
 

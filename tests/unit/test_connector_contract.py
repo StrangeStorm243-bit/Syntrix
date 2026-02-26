@@ -61,6 +61,16 @@ class TestLinkedInConnectorContract(ConnectorContractTests):
         with pytest.raises(NotImplementedError, match="read-only"):
             self.connector.post_reply("urn:li:share:123", "test reply")
 
+    def test_like_raises_not_implemented(self) -> None:
+        """LinkedIn like always raises — read-only platform."""
+        with pytest.raises(NotImplementedError, match="read-only"):
+            self.connector.like("urn:li:share:123")
+
+    def test_follow_raises_not_implemented(self) -> None:
+        """LinkedIn follow always raises — read-only platform."""
+        with pytest.raises(NotImplementedError, match="read-only"):
+            self.connector.follow("urn:li:person:123")
+
     def test_health_check_returns_false_when_stubbed(self) -> None:
         """Stubbed connector reports unhealthy."""
         assert self.connector.health_check() is False

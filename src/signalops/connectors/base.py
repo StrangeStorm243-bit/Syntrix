@@ -72,5 +72,15 @@ class Connector(ABC):
         """Post a reply. Returns the new post's platform ID."""
 
     @abstractmethod
+    def like(self, post_id: str) -> bool:
+        """Like a post. Returns True if successful."""
+        ...
+
+    @abstractmethod
+    def follow(self, user_id: str) -> bool:
+        """Follow a user. Returns True if successful."""
+        ...
+
+    @abstractmethod
     def health_check(self) -> bool:
         """Verify API connectivity and auth."""

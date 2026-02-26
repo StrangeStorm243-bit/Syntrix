@@ -46,6 +46,10 @@ Repository = "https://github.com/StrangeStorm243-bit/Syntrix"
 Issues = "https://github.com/StrangeStorm243-bit/Syntrix/issues"
 
 [project.optional-dependencies]
+bridge = [
+    "twikit>=2.0",
+    "apscheduler>=3.10",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -96,6 +100,10 @@ module = [
     "langfuse.*",
     "argilla",
     "argilla.*",
+    "twikit",
+    "twikit.*",
+    "apscheduler",
+    "apscheduler.*",
 ]
 ignore_missing_imports = true
 

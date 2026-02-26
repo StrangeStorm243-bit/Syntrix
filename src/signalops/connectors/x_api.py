@@ -195,6 +195,14 @@ class XConnector(Connector):
 
         return result
 
+    def like(self, post_id: str) -> bool:
+        """Like a tweet. Not implemented for X API v2 connector."""
+        raise NotImplementedError("like() requires user OAuth — use TwikitConnector instead")
+
+    def follow(self, user_id: str) -> bool:
+        """Follow a user. Not implemented for X API v2 connector."""
+        raise NotImplementedError("follow() requires user OAuth — use TwikitConnector instead")
+
     def health_check(self) -> bool:
         """Verify API connectivity and auth."""
         try:
