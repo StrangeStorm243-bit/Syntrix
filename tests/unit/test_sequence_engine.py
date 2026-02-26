@@ -413,11 +413,11 @@ class TestCreateDefaultSequences:
         self.session.close()
         self.engine.dispose()
 
-    def test_creates_three_sequences(self) -> None:
-        """create_default_sequences() returns 3 sequences."""
+    def test_creates_four_sequences(self) -> None:
+        """create_default_sequences() returns 4 sequences."""
         engine = SequenceEngine(self.session, self.connector)
         sequences = engine.create_default_sequences("test")
-        assert len(sequences) == 3
+        assert len(sequences) == 4
 
     def test_gentle_touch_sequence(self) -> None:
         """Gentle Touch has 3 steps: like -> wait -> reply."""
@@ -445,13 +445,13 @@ class TestCreateDefaultSequences:
         assert direct.steps[0].requires_approval is True
 
     def test_full_sequence(self) -> None:
-        """Full Sequence has 5 steps."""
+        """Full Sequence has 6 steps including DM."""
         engine = SequenceEngine(self.session, self.connector)
         sequences = engine.create_default_sequences("test")
         full = next(s for s in sequences if s.name == "Full Sequence")
         self.session.refresh(full)
 
-        assert len(full.steps) == 5
+        assert len(full.steps) == 6
         action_types = [s.action_type for s in full.steps]
         assert action_types == [
             "like",
@@ -459,7 +459,18 @@ class TestCreateDefaultSequences:
             "wait",
             "reply",
             "check_response",
+            "dm",
         ]
+
+    def test_cold_dm_sequence(self) -> None:
+        """Cold DM sequence has 1 DM step."""
+        engine = SequenceEngine(self.session, self.connector)
+        sequences = engine.create_default_sequences("test")
+        cold_dm = next(s for s in sequences if s.name == "Cold DM")
+        self.session.refresh(cold_dm)
+
+        assert len(cold_dm.steps) == 1
+        assert cold_dm.steps[0].action_type == "dm"
 
 
 class TestRateLimitEnforcement:

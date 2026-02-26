@@ -362,7 +362,7 @@ class SequenceEngine:
         full = Sequence(
             project_id=project_id,
             name="Full Sequence",
-            description="Like -> Follow -> Wait -> Reply -> Follow-up",
+            description="Like -> Follow -> Wait -> Reply -> Check -> DM",
         )
         self.session.add(full)
         self.session.flush()
@@ -399,9 +399,37 @@ class SequenceEngine:
                     action_type="check_response",
                     delay_hours=72,
                 ),
+                SequenceStep(
+                    sequence_id=full.id,
+                    step_order=6,
+                    action_type="dm",
+                    delay_hours=24,
+                    config_json='{"dm_text": ""}',
+                ),
             ]
         )
         sequences.append(full)
+
+        # Cold DM
+        cold_dm = Sequence(
+            project_id=project_id,
+            name="Cold DM",
+            description="Direct message immediately",
+        )
+        self.session.add(cold_dm)
+        self.session.flush()
+        self.session.add_all(
+            [
+                SequenceStep(
+                    sequence_id=cold_dm.id,
+                    step_order=1,
+                    action_type="dm",
+                    delay_hours=0,
+                    config_json='{"dm_text": ""}',
+                ),
+            ]
+        )
+        sequences.append(cold_dm)
 
         self.session.commit()
         return sequences
