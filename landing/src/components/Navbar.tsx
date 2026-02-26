@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Copy, Check, Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
+  { label: "Get Started", href: "#quickstart" },
   { label: "Features", href: "#features" },
   { label: "Pipeline", href: "#pipeline" },
   { label: "Docs", href: "https://github.com/StrangeStorm243-bit/Syntrix#readme" },
