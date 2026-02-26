@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { usePipelineFlow } from '../hooks/usePipelineFlow';
 import { PipelineDAG } from '../pipeline/PipelineDAG';
 import { ActivityFeed } from '../pipeline/ActivityFeed';
 import { usePerformanceMode } from '../hooks/usePerformanceMode';
 import { lazy3D, Suspense3D } from '../lib/lazy-3d';
+import { apiPost } from '../lib/api';
+import { Toast } from '../components/Toast';
+import { Play, Loader2 } from 'lucide-react';
 import type { PipelineFlowData } from '../pipeline/types';
 
 const PipelineScene = lazy3D<{ data: PipelineFlowData }>(
@@ -12,12 +16,33 @@ const PipelineScene = lazy3D<{ data: PipelineFlowData }>(
 
 type ViewMode = '2d' | '3d';
 
+interface PipelineRunResponse {
+  status: string;
+  message: string;
+}
+
 export default function PipelineLive() {
   const data = usePipelineFlow();
   const { performanceMode } = usePerformanceMode();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem('pipeline-view-mode') as ViewMode) || '2d';
   });
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const runPipeline = useMutation({
+    mutationFn: () => apiPost<PipelineRunResponse>('/api/pipeline/run'),
+    onSuccess: (res) => {
+      setToast({ message: res.message || 'Pipeline run started successfully', type: 'success' });
+    },
+    onError: (err) => {
+      setToast({
+        message: err instanceof Error ? err.message : 'Failed to start pipeline',
+        type: 'error',
+      });
+    },
+  });
+
+  const dismissToast = useCallback(() => setToast(null), []);
 
   function toggleView(mode: ViewMode) {
     setViewMode(mode);
@@ -53,42 +78,64 @@ export default function PipelineLive() {
           </span>
         </div>
 
-        {/* 2D / 3D Toggle */}
-        <div
-          className="glass flex rounded-lg p-0.5"
-          role="radiogroup"
-          aria-label="View mode"
-        >
+        <div className="flex items-center gap-3">
+          {/* Run Pipeline button */}
           <button
             type="button"
-            role="radio"
-            aria-checked={viewMode === '2d'}
-            onClick={() => toggleView('2d')}
-            className="rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-            style={{
-              background: viewMode === '2d' ? 'var(--cyber-pink)' : 'transparent',
-              color: viewMode === '2d' ? '#fff' : 'var(--cyber-text-dim)',
-            }}
+            onClick={() => runPipeline.mutate()}
+            disabled={runPipeline.isPending}
+            className="inline-flex items-center gap-2 rounded-md border border-cyber-pink bg-cyber-pink/10 px-4 py-1.5 text-sm font-mono font-semibold text-cyber-pink transition-all duration-200 hover:bg-cyber-pink/20 hover:shadow-[0_0_12px_rgba(255,20,147,0.4)] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            2D
+            {runPipeline.isPending ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play size={14} />
+                Run Pipeline
+              </>
+            )}
           </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={viewMode === '3d'}
-            onClick={() => toggleView('3d')}
-            disabled={performanceMode}
-            className="rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-            style={{
-              background: viewMode === '3d' && !performanceMode ? 'var(--cyber-pink)' : 'transparent',
-              color: viewMode === '3d' && !performanceMode ? '#fff' : 'var(--cyber-text-dim)',
-              opacity: performanceMode ? 0.4 : 1,
-              cursor: performanceMode ? 'not-allowed' : 'pointer',
-            }}
-            title={performanceMode ? 'Disabled in Performance Mode' : undefined}
+
+          {/* 2D / 3D Toggle */}
+          <div
+            className="glass flex rounded-lg p-0.5"
+            role="radiogroup"
+            aria-label="View mode"
           >
-            3D
-          </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={viewMode === '2d'}
+              onClick={() => toggleView('2d')}
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+              style={{
+                background: viewMode === '2d' ? 'var(--cyber-pink)' : 'transparent',
+                color: viewMode === '2d' ? '#fff' : 'var(--cyber-text-dim)',
+              }}
+            >
+              2D
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={viewMode === '3d'}
+              onClick={() => toggleView('3d')}
+              disabled={performanceMode}
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+              style={{
+                background: viewMode === '3d' && !performanceMode ? 'var(--cyber-pink)' : 'transparent',
+                color: viewMode === '3d' && !performanceMode ? '#fff' : 'var(--cyber-text-dim)',
+                opacity: performanceMode ? 0.4 : 1,
+                cursor: performanceMode ? 'not-allowed' : 'pointer',
+              }}
+              title={performanceMode ? 'Disabled in Performance Mode' : undefined}
+            >
+              3D
+            </button>
+          </div>
         </div>
       </div>
 
@@ -119,6 +166,11 @@ export default function PipelineLive() {
           <ActivityFeed events={data.events} isLive={data.isLive} />
         </div>
       </div>
+
+      {/* Toast notification */}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={dismissToast} />
+      )}
     </div>
   );
 }

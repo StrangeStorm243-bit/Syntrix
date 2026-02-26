@@ -8,6 +8,7 @@ import {
   FlaskConical,
   Settings,
   GitBranch,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { slideUp } from '../../lib/animation-presets';
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/leads', icon: Users, label: 'Leads' },
   { to: '/queue', icon: MessageSquare, label: 'Queue' },
+  { to: '/sequences', icon: Workflow, label: 'Sequences' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/experiments', icon: FlaskConical, label: 'Experiments' },
   { to: '/pipeline', icon: GitBranch, label: 'Pipeline' },

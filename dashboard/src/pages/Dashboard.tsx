@@ -1,9 +1,10 @@
-import { Users, MessageSquare, Send, Target } from 'lucide-react';
+import { Users, MessageSquare, Send, Target, Workflow, UserCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { NeonMetricCard } from '../components/cyber/NeonMetricCard';
 import { CyberBarChart } from '../components/cyber/CyberBarChart';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useStats } from '../hooks/useStats';
+import { useSequences } from '../hooks/useSequences';
 import { useConversionFunnel } from '../hooks/useAnalytics';
 import { useGPUTier } from '../hooks/useGPUTier';
 import { useStaggerMount } from '../hooks/useStaggerMount';
@@ -17,11 +18,16 @@ const HeroScene = lazy3D(() => import('../scenes/HeroScene'));
 export default function Dashboard() {
   const { data: stats, isLoading } = useStats();
   const { data: funnel } = useConversionFunnel();
+  const { data: sequences } = useSequences();
   const { tier: gpuTier } = useGPUTier();
   const { containerVariants, itemVariants } = useStaggerMount();
   const { performanceMode } = usePerformanceMode();
 
   if (isLoading) return <LoadingSpinner className="mx-auto mt-20" />;
+
+  // Compute sequence metrics
+  const activeSequences = sequences?.items.filter((s) => s.is_active).length ?? 0;
+  const enrolledLeads = sequences?.items.reduce((sum, s) => sum + s.enrolled_count, 0) ?? 0;
 
   return (
     <div className="relative space-y-6">
@@ -34,7 +40,7 @@ export default function Dashboard() {
 
       {/* Metric cards — stagger-animated on mount */}
       <motion.div
-        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -50,6 +56,22 @@ export default function Dashboard() {
         </motion.div>
         <motion.div variants={itemVariants}>
           <NeonMetricCard title="Outcomes" value={stats?.outcomes ?? 0} icon={<Target size={18} />} />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <NeonMetricCard
+            title="Active Sequences"
+            value={activeSequences}
+            icon={<Workflow size={18} />}
+            color="orange"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <NeonMetricCard
+            title="Enrolled Leads"
+            value={enrolledLeads}
+            icon={<UserCheck size={18} />}
+            color="gold"
+          />
         </motion.div>
       </motion.div>
 
