@@ -1,9 +1,9 @@
-import { Shield, Terminal, Code2 } from "lucide-react";
+import { Shield, Container, Code2 } from "lucide-react";
 
 const BADGES = [
   { icon: Code2, label: "Python 3.11+" },
   { icon: Shield, label: "MIT Licensed" },
-  { icon: Terminal, label: "CLI-first" },
+  { icon: Container, label: "Docker Ready" },
 ];
 
 export function TrustBar() {

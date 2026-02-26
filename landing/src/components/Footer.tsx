@@ -2,7 +2,7 @@ const LINKS = [
   { label: "GitHub", href: "https://github.com/StrangeStorm243-bit/Syntrix" },
   { label: "PyPI", href: "https://pypi.org/project/signalops/" },
   { label: "Docs", href: "https://github.com/StrangeStorm243-bit/Syntrix#readme" },
-  { label: "Architecture", href: "https://github.com/StrangeStorm243-bit/Syntrix/blob/main/PLANA.md" },
+  { label: "Dashboard", href: "https://github.com/StrangeStorm243-bit/Syntrix#web-dashboard" },
 ];
 
 export function Footer() {
