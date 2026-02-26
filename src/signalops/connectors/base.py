@@ -82,5 +82,10 @@ class Connector(ABC):
         ...
 
     @abstractmethod
+    def send_dm(self, user_id: str, text: str) -> bool:
+        """Send a direct message to a user. Returns True if successful."""
+        ...
+
+    @abstractmethod
     def health_check(self) -> bool:
         """Verify API connectivity and auth."""
