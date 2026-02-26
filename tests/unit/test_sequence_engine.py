@@ -363,15 +363,21 @@ class TestSequenceEngine:
         self.session.flush()
         self.session.add(
             SequenceStep(
-                sequence_id=seq.id, step_order=1, action_type="dm", delay_hours=0,
+                sequence_id=seq.id,
+                step_order=1,
+                action_type="dm",
+                delay_hours=0,
             ),
         )
         self.session.commit()
 
         enrollment_prev = engine.enroll(self.norm_id, seq.id, "test")
         exec_record = StepExecution(
-            enrollment_id=enrollment_prev.id, step_id=1, action_type="dm",
-            status="executed", executed_at=datetime.now(UTC) - timedelta(hours=1),
+            enrollment_id=enrollment_prev.id,
+            step_id=1,
+            action_type="dm",
+            status="executed",
+            executed_at=datetime.now(UTC) - timedelta(hours=1),
         )
         self.session.add(exec_record)
         self.session.commit()
@@ -380,9 +386,15 @@ class TestSequenceEngine:
         self.session.add(raw2)
         self.session.flush()
         norm2 = NormalizedPost(
-            raw_post_id=raw2.id, project_id="test", platform="x", platform_id="tw2",
-            author_id="u2", author_username="user2", text_original="Help",
-            text_cleaned="Help", created_at=datetime.now(UTC),
+            raw_post_id=raw2.id,
+            project_id="test",
+            platform="x",
+            platform_id="tw2",
+            author_id="u2",
+            author_username="user2",
+            text_original="Help",
+            text_cleaned="Help",
+            created_at=datetime.now(UTC),
         )
         self.session.add(norm2)
         self.session.flush()
