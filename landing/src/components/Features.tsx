@@ -3,8 +3,8 @@ import {
   BarChart3,
   Sparkles,
   UserCheck,
-  Gauge,
-  Target,
+  MessageCircle,
+  Monitor,
 } from "lucide-react";
 import { GlassCard } from "./GlassCard";
 
@@ -34,15 +34,15 @@ const FEATURES = [
     gradient: "from-aurora-cyan to-aurora-blue",
   },
   {
-    icon: Gauge,
-    title: "Rate-Limited Sending",
-    desc: "Configurable hourly, daily, and monthly caps with jitter. Compliance-first design.",
+    icon: MessageCircle,
+    title: "DM Outreach",
+    desc: "Send direct messages to leads as part of configurable outreach sequences. Reply first, then DM, or go cold — your choice.",
     gradient: "from-aurora-blue to-aurora-magenta",
   },
   {
-    icon: Target,
-    title: "Outcome Tracking",
-    desc: "Monitor if your replies get liked, replied to, or lead to follows and conversions.",
+    icon: Monitor,
+    title: "Web Dashboard",
+    desc: "React dashboard with pipeline stats, lead browser, draft queue, analytics, and real-time updates. No CLI required.",
     gradient: "from-aurora-magenta to-aurora-cyan",
   },
 ];
