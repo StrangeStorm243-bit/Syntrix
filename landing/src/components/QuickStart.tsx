@@ -4,21 +4,21 @@ import { CodeBlock } from "./CodeBlock";
 const STEPS = [
   {
     number: 1,
-    title: "Install",
-    desc: "One command via PyPI.",
-    code: "pip install signalops",
+    title: "Clone",
+    desc: "Grab the repo from GitHub.",
+    code: "git clone https://github.com/StrangeStorm243-bit/Syntrix.git\ncd Syntrix",
   },
   {
     number: 2,
-    title: "Configure",
-    desc: "Set your API keys.",
-    code: "export ANTHROPIC_API_KEY=sk-...\nexport X_BEARER_TOKEN=AAAA...",
+    title: "Launch",
+    desc: "One command starts everything.",
+    code: "docker compose up",
   },
   {
     number: 3,
-    title: "Run",
-    desc: "Execute the full pipeline.",
-    code: "signalops project set spectra\nsignalops run all --dry-run",
+    title: "Open",
+    desc: "Setup wizard guides you through.",
+    code: "# Open http://localhost:3000\n# Complete the 5-step wizard\n# Hit 'Run Pipeline' — done!",
   },
 ];
 
