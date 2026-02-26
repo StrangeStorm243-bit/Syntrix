@@ -1,0 +1,17 @@
+export const COLORS = {
+  base: "#0F172A",
+  surface: "#1E293B",
+  text: "#F8FAFC",
+  textMuted: "#94A3B8",
+  cyan: "#06B6D4",
+  blue: "#3B82F6",
+  magenta: "#D946EF",
+  green: "#22C55E",
+  twitterBlue: "#1DA1F2",
+  problemRed: "#EF4444",
+  gold: "#F59E0B",
+  goldBright: "#FBBF24",
+  moneyGreen: "#10B981",
+  white: "#FFFFFF",
+  black: "#000000",
+} as const;

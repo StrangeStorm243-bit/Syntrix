@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
+import { DemoEmbed } from "@/components/DemoEmbed";
 import { TrustBar } from "@/components/TrustBar";
 import { Pipeline } from "@/components/Pipeline";
 import { Features } from "@/components/Features";
@@ -13,6 +14,7 @@ export default function Home() {
       <Navbar />
       <main className="bg-base">
         <Hero />
+        <DemoEmbed />
         <TrustBar />
         <Pipeline />
         <Features />
