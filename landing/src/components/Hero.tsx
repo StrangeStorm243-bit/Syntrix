@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Copy, Check, Github } from "lucide-react";
 import { AuroraBackground } from "./AuroraBackground";
 import { TerminalWindow } from "./TerminalWindow";
+
+const HeroScene = lazy(() =>
+  import("./HeroScene").then((m) => ({ default: m.HeroScene }))
+);
 
 const TERMINAL_LINES = [
   { prefix: "$ ", text: "git clone https://github.com/StrangeStorm243-bit/Syntrix.git", color: "text-white" },
@@ -27,6 +31,9 @@ export function Hero() {
   return (
     <section className="relative min-h-screen overflow-hidden pt-32 pb-16">
       <AuroraBackground />
+      <Suspense fallback={null}>
+        <HeroScene />
+      </Suspense>
 
       <div className="relative z-10 mx-auto max-w-7xl px-6">
         <div className="flex flex-col items-center text-center">

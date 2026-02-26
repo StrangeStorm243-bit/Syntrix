@@ -1,3 +1,6 @@
+"use client";
+
+import { lazy, Suspense } from "react";
 import {
   Brain,
   BarChart3,
@@ -7,6 +10,10 @@ import {
   Monitor,
 } from "lucide-react";
 import { GlassCard } from "./GlassCard";
+
+const FloatingOrbs = lazy(() =>
+  import("./FloatingOrbs").then((m) => ({ default: m.FloatingOrbs }))
+);
 
 const FEATURES = [
   {
@@ -50,7 +57,10 @@ const FEATURES = [
 export function Features() {
   return (
     <section id="features" className="relative py-24">
-      <div className="mx-auto max-w-7xl px-6">
+      <Suspense fallback={null}>
+        <FloatingOrbs />
+      </Suspense>
+      <div className="relative z-10 mx-auto max-w-7xl px-6">
         {/* Section header */}
         <div className="mb-16 text-center">
           <h2 className="font-heading text-3xl font-bold text-white sm:text-4xl">
