@@ -1,10 +1,10 @@
 <p align="center">
   <h1 align="center">Syntrix</h1>
   <p align="center">
-    <strong>Agentic social lead finder + outreach workbench</strong>
+    <strong>AI-powered lead finder and outreach workbench for X (Twitter)</strong>
   </p>
   <p align="center">
-    Collect tweets matching keyword queries, judge relevance via LLM, score leads, generate reply drafts, and send human-approved replies — from the CLI or a web dashboard.
+    Find high-intent leads on X, score them with AI, craft personalized replies and DMs, and send human-approved outreach — from a web dashboard or CLI.
   </p>
 </p>
 
@@ -18,47 +18,46 @@
 
 ## How It Works
 
-Define a project config (target queries, ideal customer profile, reply persona) and let the pipeline do the rest:
+Syntrix monitors X for tweets matching your keyword queries, uses an LLM to judge which ones are real leads, scores them, and generates personalized outreach — replies and DMs — that you approve before sending.
 
 ```
-Collect ──> Normalize ──> Judge ──> Score ──> Notify ──> Draft ──> Approve ──> Send ──> Track
-  X API       Clean text    LLM       Weighted   Webhooks   LLM       Human      X API    Outcomes
-              + entities    classify   ranking    (Discord/  persona   review     post     (likes,
-                            relevant   0-100      Slack)     + tone    gate       reply    replies,
-                            /irrelevant                                                    follows)
+Collect ──> Normalize ──> Judge ──> Score ──> Draft ──> Approve ──> Send ──> Track
+  X API       Clean text    LLM       Weighted   LLM       Human      X API    Outcomes
+              + entities    classify   ranking    persona   review     reply    (likes,
+                            relevant   0-100      + tone    gate       or DM    replies,
+                            /irrelevant                                         follows)
 ```
 
-Every reply requires human approval. No auto-send, no multi-account, no browser automation.
+Every outreach message requires human approval. No auto-send, no multi-account, no browser automation.
 
 ---
 
 ## Features
 
-### Core Pipeline
-- **LLM-powered relevance judging** — any model via LiteLLM (100+ providers), keyword pre-filter for zero-cost exclusions
+### Lead Discovery & Scoring
+- **X search + Filtered Stream** — collect tweets via keyword queries (X API v2 search) or real-time filtered stream (Pro tier)
+- **LLM-powered relevance judging** — any model via LiteLLM (100+ providers), with keyword pre-filter for zero-cost exclusions
 - **Weighted lead scoring** (0-100) — extensible plugin system with 5 default scorers (relevance, authority, engagement, recency, intent) plus custom rules
-- **AI draft generation** — context-aware replies using project persona, tone, and voice notes with automatic character limit enforcement
+
+### Outreach
+- **AI draft generation** — context-aware replies using your project persona, tone, and voice notes with automatic character limit enforcement
+- **DM outreach sequences** — multi-step sequences (like, follow, wait, reply, DM) with rate limiting, jitter, and human approval gates. 4 built-in templates: Gentle Touch, Direct, Full Sequence, Cold DM
 - **Human-in-the-loop approval** — approve, edit, or reject every draft before sending
-- **Rate-limited sending** — configurable hourly/daily/monthly caps with jitter
-- **DM outreach sequences** — configurable multi-step sequences including direct messages, with rate limiting and human approval
+- **Rate-limited sending** — configurable hourly/daily caps with jitter to avoid pattern detection
 
 ### Intelligence & Learning
 - **Outcome tracking** — monitors if replies get liked, replied to, or followed
 - **Human feedback loop** — corrections to judgments feed training data export
 - **Training data export** — JSONL export for fine-tuning (judgments, drafts, DPO preference pairs, outcomes)
-- **DPO preference collection** — human edits automatically generate preference pairs for alignment training
 - **Offline evaluation** — test judge accuracy against labeled datasets with MCC, precision, recall metrics
 - **A/B testing** — canary routing between judge models with chi-squared statistical analysis
-- **Fine-tuned model support** — register and hot-swap fine-tuned models via config
 
 ### Platform & Infrastructure
-- **Web dashboard** — React SPA with pipeline stats, lead browser, draft queue, analytics charts, and real-time WebSocket updates
-- **REST API** — FastAPI backend with paginated endpoints for leads, queue, stats, analytics, and experiments
+- **Web dashboard** — React SPA with onboarding wizard, pipeline stats, lead browser, draft queue, sequence management, analytics charts, and real-time WebSocket updates
+- **REST API** — FastAPI backend with paginated endpoints for leads, queue, sequences, stats, analytics, and experiments
+- **Docker Compose** — one command to run the full stack (dashboard, API, and Ollama for free local LLM)
 - **Notification webhooks** — Discord and Slack alerts for high-score leads
 - **Multi-project support** — switch between project configs with `project set`
-- **Redis caching** — optional deduplication and rate limit persistence (falls back to in-memory)
-- **Filtered Stream** — real-time collection via X API Pro tier
-- **Batch collection** — async concurrent query fetching with configurable concurrency
 - **LLM observability** — optional Langfuse integration for tracing every LLM call
 
 ---
@@ -86,7 +85,7 @@ On first run, Ollama automatically pulls the required models (`llama3.2:3b` + `m
 **Open [http://localhost:3000](http://localhost:3000)** — the onboarding wizard walks you through setup:
 1. Describe your company and product
 2. Define your ideal customer
-3. Connect your Twitter account
+3. Connect your X (Twitter) account
 4. Configure your reply persona
 5. Choose an outreach sequence
 
@@ -196,7 +195,7 @@ The dashboard provides a visual interface for the entire workflow:
 | **Sequences** | Outreach sequences with step visualization and enrollment tracking |
 | **Analytics** | Score distribution, conversion funnel, query performance, judge accuracy |
 | **Experiments** | A/B test overview with model comparisons and traffic splits |
-| **Settings** | Twitter credentials, LLM config, sequence settings, rate limits |
+| **Settings** | X credentials, LLM config, sequence settings, rate limits |
 
 With Docker: `docker compose up` then visit [localhost:3000](http://localhost:3000).
 
@@ -219,7 +218,7 @@ Each project is a YAML file in `projects/`. Here's a minimal example:
 ```yaml
 project_id: my-product
 project_name: "My SaaS"
-description: "Find leads interested in my product"
+description: "Find leads interested in my product on X"
 
 queries:
   - text: '"looking for" ("my-feature") -is:retweet lang:en'
@@ -272,7 +271,7 @@ signalops [--project/-p NAME] [--dry-run] [--verbose/-v] [--format table|json]
 ┌─────────────────────────┐           ┌──────────────────────────────────┐
 │     Orchestrator        │           │       FastAPI REST API           │
 │  Pipeline execution,    │           │  /api/leads, /queue, /stats,    │
-│  error handling,        │           │  /analytics, /experiments        │
+│  error handling,        │           │  /analytics, /sequences          │
 │  rate limiting          │           │  WebSocket: /ws/pipeline         │
 └──┬────┬────┬────┬────┬──┘           └──────────────────────────────────┘
    │    │    │    │    │
@@ -280,20 +279,21 @@ signalops [--project/-p NAME] [--dry-run] [--verbose/-v] [--format table|json]
  ┌──────────────────────────────────────────────────────────────────────┐
  │                        Pipeline Stages                               │
  │  Collect → Normalize → Judge → Score → Notify → Draft → Send       │
- │                          │               │                           │
- │                    ┌─────┴─────┐   ┌─────┴─────┐                    │
- │                    │ A/B Test  │   │  Plugin   │                    │
- │                    │ Routing   │   │  Engine   │                    │
- │                    └───────────┘   └───────────┘                    │
+ │                          │               │                │          │
+ │                    ┌─────┴─────┐   ┌─────┴─────┐  ┌──────┴───────┐ │
+ │                    │ A/B Test  │   │  Plugin   │  │  Sequence    │ │
+ │                    │ Routing   │   │  Engine   │  │  Engine      │ │
+ │                    └───────────┘   └───────────┘  └──────────────┘ │
  └──────────────────────────────────────────────────────────────────────┘
    │              │                │                    │
    ▼              ▼                ▼                    ▼
  ┌──────────┐  ┌───────────┐  ┌────────────┐  ┌──────────────────────┐
- │Connectors│  │LLM Gateway│  │  Storage   │  │    Notifications     │
- │ X API v2 │  │ (LiteLLM) │  │ SQLAlchemy │  │  Discord + Slack     │
- │ LinkedIn │  │ Langfuse  │  │ Redis/Mem  │  │  webhooks            │
+ │X (Twitter)│  │LLM Gateway│  │  Storage   │  │    Notifications     │
+ │ API v2   │  │ (LiteLLM) │  │ SQLAlchemy │  │  Discord + Slack     │
+ │ Search   │  │ Langfuse  │  │ Redis/Mem  │  │  webhooks            │
  │ Stream   │  │ 100+ LLMs │  │ Audit Log  │  └──────────────────────┘
- └──────────┘  └───────────┘  └────────────┘
+ │ Reply/DM │  └───────────┘  └────────────┘
+ └──────────┘
 ```
 
 ### Tech Stack
@@ -306,7 +306,7 @@ signalops [--project/-p NAME] [--dry-run] [--verbose/-v] [--format table|json]
 | LLM | LiteLLM (100+ providers), Langfuse (tracing) |
 | Database | SQLAlchemy 2.0, SQLite |
 | Caching | Redis (optional, in-memory fallback) |
-| Connectors | X API v2 (search + stream + reply), LinkedIn (read-only stub) |
+| Platform | X API v2 (search + stream + reply + DM) |
 | ML | scikit-learn (TF-IDF fallback, evaluation metrics) |
 | Testing | pytest (~330 tests), ruff, mypy --strict |
 
@@ -348,11 +348,11 @@ npm run dev
 ```
 src/signalops/
 ├── cli/            # Click commands (16 files)
-├── pipeline/       # Pipeline stages + orchestrator + batch
+├── pipeline/       # Pipeline stages + orchestrator + sequence engine
 ├── models/         # LLM gateway, judge, drafter, A/B test, fine-tuned
 ├── scoring/        # Extensible plugin system (7 plugins)
-├── connectors/     # X API, LinkedIn, stream, rate limiter
-├── storage/        # SQLAlchemy models (11 tables), audit, cache
+├── connectors/     # X API v2, filtered stream, rate limiter
+├── storage/        # SQLAlchemy models (15 tables), audit, cache
 ├── config/         # Pydantic schema (~20 models), YAML loader
 ├── training/       # Exporter, evaluator, labeler, DPO, argilla
 ├── notifications/  # Discord + Slack webhook notifiers
