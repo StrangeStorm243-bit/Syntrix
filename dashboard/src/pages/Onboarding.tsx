@@ -615,6 +615,7 @@ export default function Onboarding() {
   const store = useWizardStore();
   const completeSetup = useCompleteSetup();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [setupComplete, setSetupComplete] = useState(false);
 
   const canProceed = useCallback(() => {
     switch (store.step) {
@@ -659,6 +660,9 @@ export default function Onboarding() {
 
     setSubmitError(null);
     completeSetup.mutate(payload, {
+      onSuccess: () => {
+        setSetupComplete(true);
+      },
       onError: (err) => {
         setSubmitError(err instanceof Error ? err.message : 'Setup failed. Please try again.');
       },
@@ -667,6 +671,50 @@ export default function Onboarding() {
 
   const StepComponent = STEP_COMPONENTS[store.step];
   const progressPct = ((store.step + 1) / STEPS.length) * 100;
+
+  if (setupComplete) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cyber-void p-4">
+        <div
+          className="pointer-events-none fixed inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 40% at 50% 40%, rgba(255,20,147,0.12) 0%, transparent 70%)',
+          }}
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="relative z-10 text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+            className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full"
+            style={{
+              background: 'rgba(255,20,147,0.15)',
+              border: '2px solid rgba(255,20,147,0.5)',
+              boxShadow: '0 0 30px rgba(255,20,147,0.3)',
+            }}
+          >
+            <Sparkles size={28} className="text-cyber-pink" />
+          </motion.div>
+          <h2
+            className="text-2xl font-bold tracking-wider text-cyber-pink"
+            style={{ textShadow: '0 0 15px var(--cyber-glow-pink)' }}
+          >
+            Setup Complete!
+          </h2>
+          <p className="mt-2 text-sm text-cyber-text-dim">
+            Launching your dashboard...
+          </p>
+          <Loader2 size={20} className="mx-auto mt-4 animate-spin text-cyber-pink/60" />
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-cyber-void p-4">

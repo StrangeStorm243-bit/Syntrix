@@ -101,46 +101,49 @@ export default function Dashboard() {
                 Welcome to Syntrix!
               </h2>
               <p className="mt-1 text-xs text-cyber-text-dim leading-relaxed">
-                Your pipeline is set up and ready to go. Here&apos;s how to get started:
+                Your pipeline is set up and ready to go. Follow these steps to start finding leads:
               </p>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="mt-3 space-y-2">
                 <Link
                   to="/how-it-works"
-                  className="group flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-all duration-200"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                  }}
-                >
-                  <Info size={14} className="text-blue-400 group-hover:text-blue-300" />
-                  <span className="text-cyber-text-dim group-hover:text-cyber-text">
-                    Learn how it works
-                  </span>
-                </Link>
-                <Link
-                  to="/how-it-works"
-                  className="group flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-all duration-200"
+                  className="group flex items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-all duration-200"
                   style={{
                     background: 'rgba(255,20,147,0.08)',
                     border: '1px solid rgba(255,20,147,0.2)',
                   }}
                 >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyber-pink/20 text-[10px] font-bold text-cyber-pink">1</span>
                   <Play size={14} className="text-cyber-pink group-hover:text-pink-300" />
                   <span className="text-cyber-text-dim group-hover:text-cyber-text">
-                    Run your first pipeline
+                    Run your first pipeline — collect tweets, judge relevance, score leads, and draft replies
                   </span>
                 </Link>
                 <Link
-                  to="/settings"
-                  className="group flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-all duration-200"
+                  to="/queue"
+                  className="group flex items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-all duration-200"
                   style={{
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid rgba(255,255,255,0.1)',
                   }}
                 >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-cyber-text-dim">2</span>
+                  <Send size={14} className="text-cyan-400 group-hover:text-cyan-300" />
+                  <span className="text-cyber-text-dim group-hover:text-cyber-text">
+                    Review the queue — approve, edit, or reject AI-drafted replies before sending
+                  </span>
+                </Link>
+                <Link
+                  to="/analytics"
+                  className="group flex items-center gap-3 rounded-md px-3 py-2.5 text-xs font-medium transition-all duration-200"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-cyber-text-dim">3</span>
                   <Target size={14} className="text-green-400 group-hover:text-green-300" />
                   <span className="text-cyber-text-dim group-hover:text-cyber-text">
-                    Adjust settings
+                    Track results — monitor conversions, engagement rates, and pipeline performance
                   </span>
                 </Link>
               </div>
