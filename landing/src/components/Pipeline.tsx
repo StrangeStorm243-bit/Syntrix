@@ -6,6 +6,7 @@ import {
   PenTool,
   CheckCircle2,
   Send,
+  MessageCircle,
 } from "lucide-react";
 
 const STAGES = [
@@ -51,6 +52,12 @@ const STAGES = [
     desc: "Rate-limited delivery",
     gradient: "from-aurora-magenta/20",
   },
+  {
+    icon: MessageCircle,
+    name: "DM",
+    desc: "Direct message outreach",
+    gradient: "from-aurora-magenta/25",
+  },
 ];
 
 export function Pipeline() {
@@ -66,7 +73,7 @@ export function Pipeline() {
             </span>
           </h2>
           <p className="mt-4 font-body text-lg text-slate-400">
-            Seven stages, fully configurable, human-approved at every step.
+            Eight stages, fully configurable, human-approved at every step.
           </p>
         </div>
 
