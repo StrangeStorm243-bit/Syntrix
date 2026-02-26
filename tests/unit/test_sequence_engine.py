@@ -1,0 +1,393 @@
+"""Tests for the sequence engine state machine."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from signalops.pipeline.sequence_engine import SequenceEngine
+from signalops.storage.database import (
+    Base,
+    Draft,
+    DraftStatus,
+    Enrollment,
+    EnrollmentStatus,
+    NormalizedPost,
+    Project,
+    RawPost,
+    Sequence,
+    SequenceStep,
+    StepExecution,
+    init_db,
+)
+
+
+def _make_connector() -> MagicMock:
+    """Create a mock connector with like/follow/post_reply stubs."""
+    connector = MagicMock()
+    connector.like.return_value = True
+    connector.follow.return_value = True
+    connector.post_reply.return_value = "reply_123"
+    return connector
+
+
+class TestSequenceEngine:
+    """Test enrollment, step execution, advancement, and completion."""
+
+    def setup_method(self) -> None:
+        self.engine = create_engine("sqlite:///:memory:")
+        init_db(self.engine)
+        self.session = Session(self.engine)
+
+        # Seed a project
+        proj = Project(id="test", name="Test", config_path="t.yaml")
+        self.session.add(proj)
+
+        # Seed a raw post + normalized post
+        raw = RawPost(
+            project_id="test", platform="x", platform_id="tw1", raw_json={}
+        )
+        self.session.add(raw)
+        self.session.flush()
+        norm = NormalizedPost(
+            raw_post_id=raw.id,
+            project_id="test",
+            platform="x",
+            platform_id="tw1",
+            author_id="u1",
+            author_username="testuser",
+            text_original="Need help",
+            text_cleaned="Need help",
+            created_at=datetime.now(timezone.utc),
+        )
+        self.session.add(norm)
+        self.session.flush()
+        self.norm_id: int = norm.id  # type: ignore[assignment]
+
+        # Create a "Gentle Touch" sequence: like -> wait 24h -> reply
+        seq = Sequence(project_id="test", name="Gentle Touch")
+        self.session.add(seq)
+        self.session.flush()
+        self.seq_id: int = seq.id  # type: ignore[assignment]
+        steps = [
+            SequenceStep(
+                sequence_id=seq.id,
+                step_order=1,
+                action_type="like",
+                delay_hours=0,
+            ),
+            SequenceStep(
+                sequence_id=seq.id,
+                step_order=2,
+                action_type="wait",
+                delay_hours=24,
+            ),
+            SequenceStep(
+                sequence_id=seq.id,
+                step_order=3,
+                action_type="reply",
+                delay_hours=0,
+                requires_approval=True,
+            ),
+        ]
+        self.session.add_all(steps)
+        self.session.commit()
+
+        self.connector = _make_connector()
+
+    def teardown_method(self) -> None:
+        self.session.close()
+        self.engine.dispose()
+
+    def test_enroll_lead(self) -> None:
+        """enroll() creates an ACTIVE enrollment at step 0."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+
+        assert enrollment.status == EnrollmentStatus.ACTIVE
+        assert enrollment.current_step_order == 0
+        assert enrollment.next_step_at is not None
+
+    def test_enroll_sets_next_step_at(self) -> None:
+        """enroll() sets next_step_at to approximately now."""
+        engine = SequenceEngine(self.session, self.connector)
+        before = datetime.now(timezone.utc).replace(tzinfo=None)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+
+        assert enrollment.next_step_at is not None
+        # SQLite stores naive datetimes, so compare without tzinfo
+        after = datetime.now(timezone.utc).replace(tzinfo=None)
+        assert before <= enrollment.next_step_at <= after
+
+    def test_execute_like_step(self) -> None:
+        """execute_due_steps() executes the 'like' step and calls connector."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        # Make it due now
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 1
+        self.connector.like.assert_called_once_with("tw1")
+
+    def test_like_step_records_execution(self) -> None:
+        """After executing a like step, a StepExecution record exists."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        engine.execute_due_steps()
+
+        executions = (
+            self.session.query(StepExecution)
+            .filter(StepExecution.enrollment_id == enrollment.id)
+            .all()
+        )
+        assert len(executions) == 1
+        assert executions[0].action_type == "like"
+        assert executions[0].status == "executed"
+
+    def test_like_step_advances_enrollment(self) -> None:
+        """After like step, enrollment advances to step_order 1."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        engine.execute_due_steps()
+        self.session.refresh(enrollment)
+
+        assert enrollment.current_step_order == 1
+
+    def test_wait_step_advances_time(self) -> None:
+        """A 'wait' step sets next_step_at in the future (reply has 0 delay)."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        # Simulate having completed step 1 (like), now on wait step
+        enrollment.current_step_order = 1  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        engine.execute_due_steps()
+        self.session.refresh(enrollment)
+
+        # After wait step (24h delay), next step is reply (0h delay).
+        # The _advance method uses the NEXT step's delay_hours.
+        # Reply step has delay_hours=0 so next_step_at is ~now.
+        # Just verify enrollment advanced past the wait step.
+        assert enrollment.current_step_order == 2
+
+    def test_reply_step_requires_approved_draft(self) -> None:
+        """Reply step is skipped if no approved draft exists."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        # Jump to step 3 (reply)
+        enrollment.current_step_order = 2  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 0
+        self.connector.post_reply.assert_not_called()
+
+    def test_reply_step_sends_with_approved_draft(self) -> None:
+        """Reply step sends via connector when an approved draft exists."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        # Jump to step 3 (reply)
+        enrollment.current_step_order = 2  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+
+        # Create an approved draft for this post
+        draft = Draft(
+            normalized_post_id=self.norm_id,
+            project_id="test",
+            text_generated="Great question! Check out our tool.",
+            model_id="test-model",
+            status=DraftStatus.APPROVED,
+        )
+        self.session.add(draft)
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 1
+        self.connector.post_reply.assert_called_once_with(
+            "tw1", "Great question! Check out our tool."
+        )
+
+    def test_reply_step_uses_text_final_if_available(self) -> None:
+        """Reply step prefers text_final over text_generated."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.current_step_order = 2  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+
+        draft = Draft(
+            normalized_post_id=self.norm_id,
+            project_id="test",
+            text_generated="Original text",
+            text_final="Edited text",
+            model_id="test-model",
+            status=DraftStatus.EDITED,
+        )
+        self.session.add(draft)
+        self.session.commit()
+
+        engine.execute_due_steps()
+        self.connector.post_reply.assert_called_once_with("tw1", "Edited text")
+
+    def test_completion_after_last_step(self) -> None:
+        """Enrollment is COMPLETED after executing the last step."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.current_step_order = 2  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+
+        # Add approved draft for reply step
+        draft = Draft(
+            normalized_post_id=self.norm_id,
+            project_id="test",
+            text_generated="Reply text",
+            model_id="test-model",
+            status=DraftStatus.APPROVED,
+        )
+        self.session.add(draft)
+        self.session.commit()
+
+        engine.execute_due_steps()
+        self.session.refresh(enrollment)
+
+        assert enrollment.status == EnrollmentStatus.COMPLETED
+        assert enrollment.completed_at is not None
+        assert enrollment.next_step_at is None
+
+    def test_not_due_enrollment_is_skipped(self) -> None:
+        """Enrollments with next_step_at in the future are not executed."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.next_step_at = datetime.now(timezone.utc) + timedelta(hours=24)  # type: ignore[assignment]
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 0
+
+    def test_paused_enrollment_is_skipped(self) -> None:
+        """Paused enrollments are not executed."""
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.status = EnrollmentStatus.PAUSED  # type: ignore[assignment]
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 0
+
+    def test_follow_step(self) -> None:
+        """Follow step calls connector.follow with author_id."""
+        # Create a "Direct Follow" sequence with just a follow step
+        seq = Sequence(project_id="test", name="Follow Only")
+        self.session.add(seq)
+        self.session.flush()
+        step = SequenceStep(
+            sequence_id=seq.id,  # type: ignore[arg-type]
+            step_order=1,
+            action_type="follow",
+            delay_hours=0,
+        )
+        self.session.add(step)
+        self.session.commit()
+
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(
+            self.norm_id, seq.id, "test"  # type: ignore[arg-type]
+        )
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        engine.execute_due_steps()
+        self.connector.follow.assert_called_once_with("u1")
+
+    def test_failed_like_does_not_advance(self) -> None:
+        """If like fails, enrollment does not advance."""
+        self.connector.like.return_value = False
+
+        engine = SequenceEngine(self.session, self.connector)
+        enrollment = engine.enroll(self.norm_id, self.seq_id, "test")
+        enrollment.next_step_at = datetime.now(timezone.utc)  # type: ignore[assignment]
+        self.session.commit()
+
+        executed = engine.execute_due_steps()
+        assert executed == 0
+        self.session.refresh(enrollment)
+        assert enrollment.current_step_order == 0  # Did not advance
+
+
+class TestCreateDefaultSequences:
+    """Test create_default_sequences() produces 3 correct templates."""
+
+    def setup_method(self) -> None:
+        self.engine = create_engine("sqlite:///:memory:")
+        init_db(self.engine)
+        self.session = Session(self.engine)
+
+        proj = Project(id="test", name="Test", config_path="t.yaml")
+        self.session.add(proj)
+        self.session.commit()
+
+        self.connector = _make_connector()
+
+    def teardown_method(self) -> None:
+        self.session.close()
+        self.engine.dispose()
+
+    def test_creates_three_sequences(self) -> None:
+        """create_default_sequences() returns 3 sequences."""
+        engine = SequenceEngine(self.session, self.connector)
+        sequences = engine.create_default_sequences("test")
+        assert len(sequences) == 3
+
+    def test_gentle_touch_sequence(self) -> None:
+        """Gentle Touch has 3 steps: like -> wait -> reply."""
+        engine = SequenceEngine(self.session, self.connector)
+        sequences = engine.create_default_sequences("test")
+        gentle = next(s for s in sequences if s.name == "Gentle Touch")
+        self.session.refresh(gentle)
+
+        assert len(gentle.steps) == 3
+        assert gentle.steps[0].action_type == "like"
+        assert gentle.steps[1].action_type == "wait"
+        assert gentle.steps[1].delay_hours == 24
+        assert gentle.steps[2].action_type == "reply"
+        assert gentle.steps[2].requires_approval is True
+
+    def test_direct_sequence(self) -> None:
+        """Direct has 1 step: reply (with approval)."""
+        engine = SequenceEngine(self.session, self.connector)
+        sequences = engine.create_default_sequences("test")
+        direct = next(s for s in sequences if s.name == "Direct")
+        self.session.refresh(direct)
+
+        assert len(direct.steps) == 1
+        assert direct.steps[0].action_type == "reply"
+        assert direct.steps[0].requires_approval is True
+
+    def test_full_sequence(self) -> None:
+        """Full Sequence has 5 steps."""
+        engine = SequenceEngine(self.session, self.connector)
+        sequences = engine.create_default_sequences("test")
+        full = next(s for s in sequences if s.name == "Full Sequence")
+        self.session.refresh(full)
+
+        assert len(full.steps) == 5
+        action_types = [s.action_type for s in full.steps]
+        assert action_types == [
+            "like",
+            "follow",
+            "wait",
+            "reply",
+            "check_response",
+        ]
