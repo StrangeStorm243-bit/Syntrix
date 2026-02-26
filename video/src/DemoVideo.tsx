@@ -1,5 +1,12 @@
 import { AbsoluteFill, Sequence } from "remotion";
 import { COLORS } from "./lib/colors";
+import { TheProblem } from "./scenes/TheProblem";
+import { EnterSyntrix } from "./scenes/EnterSyntrix";
+import { ThePipeline } from "./scenes/ThePipeline";
+import { TheDashboard } from "./scenes/TheDashboard";
+import { TheResults } from "./scenes/TheResults";
+import { GettingRich } from "./scenes/GettingRich";
+import { CTA } from "./scenes/CTA";
 
 const SCENE = {
   problem:   { start: 0,    duration: 240 },
@@ -15,39 +22,25 @@ export const DemoVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.base }}>
       <Sequence from={SCENE.problem.start} durationInFrames={SCENE.problem.duration} name="The Problem">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.text, fontSize: 48 }}>
-          Scene 1: The Problem
-        </AbsoluteFill>
+        <TheProblem />
       </Sequence>
       <Sequence from={SCENE.enter.start} durationInFrames={SCENE.enter.duration} name="Enter Syntrix">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.cyan, fontSize: 48 }}>
-          Scene 2: Enter Syntrix
-        </AbsoluteFill>
+        <EnterSyntrix />
       </Sequence>
       <Sequence from={SCENE.pipeline.start} durationInFrames={SCENE.pipeline.duration} name="The Pipeline">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.blue, fontSize: 48 }}>
-          Scene 3: The Pipeline
-        </AbsoluteFill>
+        <ThePipeline />
       </Sequence>
       <Sequence from={SCENE.dashboard.start} durationInFrames={SCENE.dashboard.duration} name="The Dashboard">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.magenta, fontSize: 48 }}>
-          Scene 4: The Dashboard
-        </AbsoluteFill>
+        <TheDashboard />
       </Sequence>
       <Sequence from={SCENE.results.start} durationInFrames={SCENE.results.duration} name="The Results">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.green, fontSize: 48 }}>
-          Scene 5: The Results
-        </AbsoluteFill>
+        <TheResults />
       </Sequence>
       <Sequence from={SCENE.rich.start} durationInFrames={SCENE.rich.duration} name="Getting Rich">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.gold, fontSize: 48 }}>
-          Scene 6: Getting Rich
-        </AbsoluteFill>
+        <GettingRich />
       </Sequence>
       <Sequence from={SCENE.cta.start} durationInFrames={SCENE.cta.duration} name="CTA">
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: COLORS.text, fontSize: 48 }}>
-          Scene 7: CTA
-        </AbsoluteFill>
+        <CTA />
       </Sequence>
     </AbsoluteFill>
   );
