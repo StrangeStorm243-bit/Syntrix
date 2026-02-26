@@ -52,7 +52,7 @@ function AppRoutes() {
         <Route path="analytics" element={<Analytics />} />
         <Route path="experiments" element={<Experiments />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="pipeline" element={<PipelineLive />} />
+        <Route path="how-it-works" element={<PipelineLive />} />
       </Route>
     </Routes>
   );

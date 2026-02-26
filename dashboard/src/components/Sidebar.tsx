@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { to: '/sequences', icon: Workflow, label: 'Sequences' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/experiments', icon: FlaskConical, label: 'Experiments' },
-  { to: '/pipeline', icon: Activity, label: 'Pipeline' },
+  { to: '/how-it-works', icon: Activity, label: 'How It Works' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

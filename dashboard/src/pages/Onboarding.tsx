@@ -33,11 +33,11 @@ import { useTestConnection, useCompleteSetup } from '../hooks/useSetup';
 import type { SetupRequest } from '../hooks/useSetup';
 
 const STEPS = [
-  { label: 'Company', icon: Building2 },
-  { label: 'ICP', icon: Target },
-  { label: 'Twitter', icon: Twitter },
-  { label: 'Persona', icon: User },
-  { label: 'Outreach', icon: Zap },
+  { label: 'Company', icon: Building2, subtitle: 'Tell us about your product so AI can find relevant leads' },
+  { label: 'ICP', icon: Target, subtitle: 'Define your ideal customer profile to filter the right people' },
+  { label: 'Twitter', icon: Twitter, subtitle: 'Connect your Twitter account to collect tweets and send replies' },
+  { label: 'Persona', icon: User, subtitle: 'Configure your AI reply persona and choose your LLM provider' },
+  { label: 'Outreach', icon: Zap, subtitle: 'Pick an outreach sequence and set your daily action limits' },
 ];
 
 const TONE_OPTIONS = [
@@ -697,6 +697,26 @@ export default function Onboarding() {
           >
             Let&apos;s set up your lead generation pipeline
           </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mx-auto mt-3 flex max-w-md flex-wrap justify-center gap-2"
+          >
+            {['Find leads on Twitter', 'Score with AI', 'Draft replies', 'You approve', 'Auto-send'].map(
+              (item, i) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1 text-[10px] font-mono text-cyber-text-dim/80"
+                >
+                  {i > 0 && (
+                    <span className="text-cyber-pink/40 mr-1">&#8594;</span>
+                  )}
+                  {item}
+                </span>
+              ),
+            )}
+          </motion.div>
         </div>
 
         {/* Step indicator */}
@@ -746,7 +766,10 @@ export default function Onboarding() {
               <h2 className="text-lg font-semibold text-cyber-text">
                 {STEPS[store.step].label}
               </h2>
-              <p className="text-xs text-cyber-text-dim">
+              <p className="mt-0.5 text-xs text-cyber-text-dim">
+                {STEPS[store.step].subtitle}
+              </p>
+              <p className="mt-1 text-[10px] text-cyber-text-dim/60 font-mono">
                 Step {store.step + 1} of {STEPS.length}
               </p>
             </div>
