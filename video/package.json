@@ -1,0 +1,23 @@
+{
+  "name": "syntrix-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts DemoVideo out/demo-1080p.mp4",
+    "render:720": "remotion render src/index.ts DemoVideo out/demo-720p.mp4 --scale=0.667",
+    "render:square": "remotion render src/index.ts DemoVideoSquare out/demo-square.mp4",
+    "render:vertical": "remotion render src/index.ts DemoVideoVertical out/demo-vertical.mp4"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.399",
+    "@remotion/cli": "4.0.399"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
