@@ -153,6 +153,19 @@ class TwikitConnector(Connector):
         finally:
             loop.close()
 
+    def send_dm(self, user_id: str, text: str) -> bool:
+        """Send a direct message to a user."""
+        client = self._ensure_client()
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(client.send_dm(user_id, text))
+            return True
+        except Exception:  # noqa: BLE001
+            logger.warning("Failed to send DM to user %s", user_id)
+            return False
+        finally:
+            loop.close()
+
     def health_check(self) -> bool:
         """Check if we have a valid session."""
         return self._logged_in

@@ -142,6 +142,10 @@ class LinkedInConnector(Connector):
             "LinkedIn follow is not implemented. LinkedIn connector is read-only intelligence only."
         )
 
+    def send_dm(self, user_id: str, text: str) -> bool:
+        """Send DM — not supported for LinkedIn."""
+        raise NotImplementedError("LinkedIn DMs not supported")
+
     def health_check(self) -> bool:
         """Verify LinkedIn API connectivity.
 

@@ -145,6 +145,29 @@ class TestTwikitConnector:
         assert result["followers"] == 1000
         assert result["verified"] is True
 
+    def test_send_dm_success(self) -> None:
+        """send_dm() should call client.send_dm and return True."""
+        connector = TwikitConnector(username="test", password="pass")
+        mock_client = MagicMock()
+        mock_client.send_dm = AsyncMock(return_value=MagicMock())
+        connector._client = mock_client
+        connector._logged_in = True
+
+        result = connector.send_dm("user123", "Hey, check this out!")
+        assert result is True
+        mock_client.send_dm.assert_called_once_with("user123", "Hey, check this out!")
+
+    def test_send_dm_failure(self) -> None:
+        """send_dm() should return False on failure."""
+        connector = TwikitConnector(username="test", password="pass")
+        mock_client = MagicMock()
+        mock_client.send_dm = AsyncMock(side_effect=Exception("DM failed"))
+        connector._client = mock_client
+        connector._logged_in = True
+
+        result = connector.send_dm("user123", "Hello")
+        assert result is False
+
     def test_health_check_with_valid_session(self) -> None:
         """health_check() returns True when logged in."""
         connector = TwikitConnector(username="test", password="pass")

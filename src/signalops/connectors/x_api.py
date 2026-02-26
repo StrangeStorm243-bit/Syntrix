@@ -203,6 +203,10 @@ class XConnector(Connector):
         """Follow a user. Not implemented for X API v2 connector."""
         raise NotImplementedError("follow() requires user OAuth — use TwikitConnector instead")
 
+    def send_dm(self, user_id: str, text: str) -> bool:
+        """Send DM — not supported via X API v2 free tier."""
+        raise NotImplementedError("DMs require twikit connector")
+
     def health_check(self) -> bool:
         """Verify API connectivity and auth."""
         try:
